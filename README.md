@@ -48,7 +48,6 @@ func main() {
     - Geo queries (near, withinGeoBox, withinKilometers, withinMiles, withinRadians)
     - Regex match
     - Match key in subquery
-    - Count
 	- First
 - Missing CRUD operations:
     - Create

@@ -194,7 +194,9 @@ func handleResponse(resp *http.Response, op requestT, dst interface{}) error {
 		return err
 	}
 
-	if r, ok := data["results"]; ok {
+	if c, ok := data["count"]; ok {
+		return populateValue(dst, c)
+	} else if r, ok := data["results"]; ok {
 		// Handle query results
 		return populateValue(dst, r)
 	} else {

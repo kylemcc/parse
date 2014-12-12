@@ -79,6 +79,7 @@ type queryT struct {
 	orderBy []string
 	limit   *int
 	skip    *int
+	count   *int
 	where   map[string]interface{}
 	include map[string]struct{}
 	keys    map[string]struct{}
@@ -423,7 +424,14 @@ func (q *queryT) First() error {
 }
 
 func (q *queryT) Count() (int64, error) {
-	return 0, nil
+	l := 0
+	c := 1
+	q.limit = &l
+	q.count = &c
+
+	var count int64
+	err := defaultClient.doRequest(q, &count)
+	return count, err
 }
 
 func (q *queryT) payload() (string, error) {
@@ -442,6 +450,10 @@ func (q *queryT) payload() (string, error) {
 
 	if q.skip != nil {
 		p["skip"] = []string{strconv.Itoa(*q.skip)}
+	}
+
+	if q.count != nil {
+		p["count"] = []string{strconv.Itoa(*q.count)}
 	}
 
 	if len(q.orderBy) > 0 {

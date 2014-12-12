@@ -381,10 +381,11 @@ func (q *queryT) Each(rc interface{}, ec chan<- error) error {
 	q.OrderBy("objectId")
 	q.Limit(100)
 
-	s := reflect.New(reflect.SliceOf(rt.Elem()))
-	s.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rt.Elem()), 0, 100))
 	go func() {
 		for {
+			s := reflect.New(reflect.SliceOf(rt.Elem()))
+			s.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rt.Elem()), 0, 100))
+
 			err := defaultClient.doRequest(q, s.Interface())
 			if err != nil {
 				ec <- err

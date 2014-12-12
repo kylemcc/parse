@@ -71,7 +71,6 @@ type Query interface {
 	Count() (int64, error)
 }
 
-
 type queryT struct {
 	inst interface{}
 	op   opTypeT
@@ -471,7 +470,6 @@ func (q *queryT) payload() (string, error) {
 	return p.Encode(), nil
 }
 
-
 // Implement the operationT interface
 func (q *queryT) method() string {
 	return q.op.method()
@@ -542,7 +540,6 @@ func (q *queryT) useMasterKey() bool {
 func (q *queryT) session() *sessionT {
 	return q.currentSession
 }
-
 
 // From the Javascript library - convert the string represented by re into a regex
 // value that matches it. MongoDb (what backs Parse) uses PCRE syntax

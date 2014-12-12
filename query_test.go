@@ -2,11 +2,11 @@ package parse
 
 import "testing"
 
-type CustomClass struct{
+type CustomClass struct {
 	Base
 }
 
-type CustomClassCustomName struct{
+type CustomClassCustomName struct {
 	Base
 }
 
@@ -14,7 +14,7 @@ func (c CustomClassCustomName) ClassName() string {
 	return "customName"
 }
 
-type CustomClassCustomEndpoint struct{
+type CustomClassCustomEndpoint struct {
 	Base
 }
 
@@ -54,7 +54,7 @@ func TestEndpoint(t *testing.T) {
 func TestEndpointGetUpdateDelete(t *testing.T) {
 	testCases := []struct {
 		inst     interface{}
-		id string
+		id       string
 		expected string
 	}{
 		{&User{}, "UserId1", "https://api.parse.com/1/users/UserId1"},

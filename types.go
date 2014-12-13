@@ -73,6 +73,39 @@ type ACL struct {
 }
 
 type GeoPoint struct {
+	Latitude float64
+	Longitude float64
+}
+
+func (g GeoPoint) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		Type string `json:"__type"`
+		Latitude float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+	}{
+		"GeoPoint",
+		g.Latitude,
+		g.Longitude,
+	})
+}
+
+func (g *GeoPoint) UnmarshalJSON(b []byte) error {
+	s := struct {
+		Type string `json:"__type"`
+		Latitude float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+	}{}
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return err
+	}
+	if s.Type != "GeoPoint" {
+		return fmt.Errorf("cannot unmarshal type %s to type GeoPoint", s.Type)
+	}
+
+	g.Latitude = s.Latitude
+	g.Longitude = s.Longitude
+	return nil
 }
 
 type File struct {

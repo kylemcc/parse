@@ -64,6 +64,11 @@ type Query interface {
 	Contains(f string, v string) Query
 	StartsWith(f string, v string) Query
 	EndsWith(f string, v string) Query
+	WithinGeoBox(f string, sw GeoPoint, ne GeoPoint) Query
+	Near(f string, g GeoPoint) Query
+	WithinMiles(f string, g GeoPoint, m float64) Query
+	WithinKilometers(f string, g GeoPoint, k float64) Query
+	WithinRadians(f string, g GeoPoint, r float64) Query
 	Or(qs ...Query) Query
 
 	Each(rc interface{}, ec chan<- error) error
@@ -377,6 +382,46 @@ func (q *queryT) EndsWith(f string, v string) Query {
 
 	q.where[f] = map[string]interface{}{
 		"$regex": v,
+	}
+	return q
+}
+
+func (q *queryT) WithinGeoBox(f string, sw GeoPoint, ne GeoPoint) Query {
+	q.where[f] = map[string]interface{}{
+		"$within": map[string]interface{}{
+			"$box": []GeoPoint{sw, ne},
+		},
+	}
+	return q
+}
+
+func (q *queryT) Near(f string, g GeoPoint) Query {
+	q.where[f] = map[string]interface{}{
+		"$nearSphere": g,
+	}
+	return q
+}
+
+func (q *queryT) WithinMiles(f string, g GeoPoint, m float64) Query {
+	q.where[f] = map[string]interface{}{
+		"$nearSphere":         g,
+		"$maxDistanceInMiles": m,
+	}
+	return q
+}
+
+func (q *queryT) WithinKilometers(f string, g GeoPoint, k float64) Query {
+	q.where[f] = map[string]interface{}{
+		"$nearSphere":              g,
+		"$maxDistanceInKilometers": k,
+	}
+	return q
+}
+
+func (q *queryT) WithinRadians(f string, g GeoPoint, r float64) Query {
+	q.where[f] = map[string]interface{}{
+		"$nearSphere":           g,
+		"$maxDistanceInRadians": r,
 	}
 	return q
 }

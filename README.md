@@ -53,6 +53,7 @@ func main() {
     - Update
     - Delete
 - Login/Sessions
+- ACLs
 - Cloud Functions
 - Background Jobs
 - Push Notifications

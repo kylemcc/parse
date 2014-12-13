@@ -44,7 +44,6 @@ func main() {
 ###TODO
 - Documentation
 - Missing query operations
-    - Date values
     - Geo queries (near, withinGeoBox, withinKilometers, withinMiles, withinRadians)
     - Regex match
     - Match key in subquery

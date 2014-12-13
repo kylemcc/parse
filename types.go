@@ -1,6 +1,10 @@
 package parse
 
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 // An interface for custom Parse types. Contains a single method:
 //
@@ -71,11 +75,56 @@ type ACL struct {
 type GeoPoint struct {
 }
 
-type Pointer struct {
-}
-
 type File struct {
 }
 
-type Date struct {
+type Pointer struct {
+	Id string
+	ClassName string
+}
+
+func (p Pointer) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		Type string `json:"__type"`
+		ClassName string `json:"className"`
+		Id string `json:"objectId"`
+	}{
+		"Pointer",
+		p.ClassName,
+		p.Id,
+	})
+}
+
+type Date time.Time
+
+func (d Date) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		Type string `json:"__type"`
+		Iso  string `json:"iso"`
+	}{
+		"Date",
+		time.Time(d).Format(time.RFC3339),
+	})
+}
+
+func (d *Date) UnmarshalJSON(b []byte) error {
+	s := struct {
+		Type string `json:"__type"`
+		Iso  string `json:"iso"`
+	}{}
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return err
+	}
+	if s.Type != "Date" {
+		return fmt.Errorf("cannot unmarshal type %s to type Date", s.Type)
+	}
+
+	t, err := time.Parse(s.Iso, time.RFC3339Nano)
+	if err != nil {
+		return err
+	}
+
+	*d = Date(t)
+	return nil
 }

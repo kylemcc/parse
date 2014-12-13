@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type opTypeT int
@@ -153,76 +154,114 @@ func (q *queryT) Keys(fs ...string) Query {
 }
 
 func (q *queryT) EqualTo(f string, v interface{}) Query {
-	q.where[f] = v
+	qv := getQueryRepr(q.inst, f, v)
+	q.where[f] = qv
 	return q
 }
 
 func (q *queryT) NotEqualTo(f string, v interface{}) Query {
+	qv := getQueryRepr(q.inst, f, v)
 	if cv, ok := q.where[f]; ok {
 		if m, ok := cv.(map[string]interface{}); ok {
-			m["$ne"] = v
+			m["$ne"] = qv
 			return q
 		}
 	}
 
 	q.where[f] = map[string]interface{}{
-		"$ne": v,
+		"$ne": qv,
 	}
 	return q
 }
 
 func (q *queryT) GreaterThan(f string, v interface{}) Query {
+	var qv interface{}
+	if t, ok := v.(time.Time); ok {
+		qv = Date(t)
+	} else if t, ok := v.(*time.Time); ok {
+		qv = Date(*t)
+	} else {
+		qv = v
+	}
+
 	if cv, ok := q.where[f]; ok {
 		if m, ok := cv.(map[string]interface{}); ok {
-			m["$gt"] = v
+			m["$gt"] = qv
 			return q
 		}
 	}
 
 	q.where[f] = map[string]interface{}{
-		"$gt": v,
+		"$gt": qv,
 	}
 	return q
 }
 
 func (q *queryT) GreaterThanOrEqual(f string, v interface{}) Query {
+	var qv interface{}
+	if t, ok := v.(time.Time); ok {
+		qv = Date(t)
+	} else if t, ok := v.(*time.Time); ok {
+		qv = Date(*t)
+	} else {
+		qv = v
+	}
+
 	if cv, ok := q.where[f]; ok {
 		if m, ok := cv.(map[string]interface{}); ok {
-			m["$gte"] = v
+			m["$gte"] = qv
 			return q
 		}
 	}
 
 	q.where[f] = map[string]interface{}{
-		"$gte": v,
+		"$gte": qv,
 	}
 	return q
 }
 
 func (q *queryT) LessThan(f string, v interface{}) Query {
+	var qv interface{}
+	if t, ok := v.(time.Time); ok {
+		qv = Date(t)
+	} else if t, ok := v.(*time.Time); ok {
+		qv = Date(*t)
+	} else {
+		qv = v
+	}
+
 	if cv, ok := q.where[f]; ok {
 		if m, ok := cv.(map[string]interface{}); ok {
-			m["$lt"] = v
+			m["$lt"] = qv
 			return q
 		}
 	}
 
 	q.where[f] = map[string]interface{}{
-		"$lt": v,
+		"$lt": qv,
 	}
 	return q
 }
 
 func (q *queryT) LessThanOrEqual(f string, v interface{}) Query {
+	var qv interface{}
+	if t, ok := v.(time.Time); ok {
+		qv = Date(t)
+	} else if t, ok := v.(*time.Time); ok {
+		qv = Date(*t)
+	} else {
+		qv = v
+	}
+
 	if cv, ok := q.where[f]; ok {
 		if m, ok := cv.(map[string]interface{}); ok {
-			m["$lte"] = v
+			m["$lte"] = qv
 			return q
 		}
 	}
 
 	q.where[f] = map[string]interface{}{
-		"$lte": v,
+		"$lte": qv,
 	}
 	return q
 }
@@ -558,4 +597,81 @@ func (q *queryT) session() *sessionT {
 // value that matches it. MongoDb (what backs Parse) uses PCRE syntax
 func quote(re string) string {
 	return "\\Q" + strings.Replace(re, "\\E", "\\E\\\\E\\Q", -1) + "\\E"
+}
+
+func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
+	fmt.Printf("inst:[%+v] f:[%s] v:[%v]\n", inst, f, v)
+	var fname string
+	fieldMap := getFieldNameMap(reflect.ValueOf(inst))
+	fmt.Printf("fnamemap:[%+v]\n", fieldMap)
+
+	if fn, ok := fieldMap[f]; ok {
+		fname = fn
+	} else {
+		fname = f
+	}
+	fname = strings.Title(fname)
+
+	rvInst := reflect.ValueOf(inst)
+	rviInst := reflect.Indirect(rvInst)
+	rtInst := rviInst.Type()
+	if rtInst.Kind() == reflect.Slice || rtInst.Kind() == reflect.Array {
+		rtInst = rtInst.Elem()
+		if rtInst.Kind() == reflect.Ptr {
+			rtInst = rtInst.Elem()
+		}
+	}
+
+	if rtInst.Kind() == reflect.Struct {
+		if sf, ok := rtInst.FieldByName(fname); ok {
+			ft := sf.Type
+			if ft.Kind() == reflect.Ptr {
+				ft = ft.Elem()
+			}
+
+			if ft.Kind() == reflect.Struct {
+				if ft == reflect.TypeOf(time.Time{}) || ft == reflect.TypeOf(Date{}) {
+					switch v.(type) {
+					case time.Time:
+						return Date(v.(time.Time))
+					case *time.Time:
+						return Date(*v.(*time.Time))
+					case Date, *Date:
+						return v
+					case string:
+						return map[string]string{
+							"__type": "Date",
+							"iso": v.(string),
+						}
+					}
+				} else {
+					var id string
+					var cname string
+					fv := rviInst.FieldByName(fname)
+					fvi := reflect.Indirect(fv)
+
+					if tmp, ok := fv.Interface().(iClassName); ok {
+						cname = tmp.ClassName()
+					} else {
+						cname = fvi.Type().Name()
+					}
+
+					rv := reflect.ValueOf(v)
+					rvi := reflect.Indirect(rv)
+					if rvi.Kind() == reflect.String {
+						id = rvi.Interface().(string)
+					} else if idf := rvi.FieldByName("Id"); idf.IsValid() {
+						id = idf.Interface().(string)
+					}
+
+					return Pointer{
+						Id: id,
+						ClassName: cname,
+					}
+				}
+			}
+		}
+	}
+
+	return v
 }

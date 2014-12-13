@@ -20,6 +20,8 @@ const (
 	SessionTokenHeader = "X-Parse-Session-Token"
 )
 
+var fieldNameCache map[reflect.Type]map[string]string = make(map[reflect.Type]map[string]string)
+
 type requestT interface {
 	method() string
 	endpoint() (string, error)
@@ -159,6 +161,10 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 		}
 	}
 
+	if f, ok := fieldNameCache[t]; ok {
+		return f
+	}
+
 	fields := getFields(t)
 
 	fieldMap := make(map[string]string)
@@ -167,6 +173,8 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 			fieldMap[tag] = f.Name
 		}
 	}
+
+	fieldNameCache[t] = fieldMap
 	return fieldMap
 }
 
@@ -237,16 +245,34 @@ func populateValue(dst interface{}, src interface{}) error {
 			return fmt.Errorf("expected slice, got %s", sv.Kind())
 		}
 	case reflect.Struct: // TODO: Handle other Parse object types ?
-		if dvi.Type() == reflect.TypeOf(time.Time{}) {
+		if dvi.Type() == reflect.TypeOf(time.Time{}) || dvi.Type() == reflect.TypeOf(Date{}) {
 			// TODO: handle Parse "Date" type
 			if s, ok := src.(string); ok {
 				if t, err := parseTime(s); err != nil {
 					return err
 				} else {
-					dvi.Set(reflect.ValueOf(t))
+					dvi.Set(reflect.ValueOf(t).Convert(dvi.Type()))
+				}
+			} else if m, ok := src.(map[string]interface{}); ok{
+				if t, ok := m["__type"]; ok {
+					if t == "Date" {
+						if ds, ok := m["iso"]; ok {
+							if t, err := parseTime(ds.(string)); err != nil {
+								return err
+							} else {
+								dvi.Set(reflect.ValueOf(t).Convert(dvi.Type()))
+							}
+						} else {
+							return fmt.Errorf("malformed Date type: %v", m)
+						}
+					} else {
+						return fmt.Errorf("expected Date type got %s", t)
+					}
+				} else {
+					return fmt.Errorf("no __type in object: %v", m)
 				}
 			} else {
-				return fmt.Errorf("expected string, got %s", sv.Type())
+				return fmt.Errorf("expected string or Date type, got %s", sv.Type())
 			}
 		} else if sv.Kind() == reflect.Map {
 			fieldNameMap := getFieldNameMap(dvi)
@@ -256,6 +282,10 @@ func populateValue(dst interface{}, src interface{}) error {
 				}
 
 				for k, v := range m {
+					if k == "__type" {
+						continue
+					}
+
 					if nk, ok := fieldNameMap[k]; ok {
 						k = nk
 					}

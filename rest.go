@@ -253,7 +253,7 @@ func populateValue(dst interface{}, src interface{}) error {
 				} else {
 					dvi.Set(reflect.ValueOf(t).Convert(dvi.Type()))
 				}
-			} else if m, ok := src.(map[string]interface{}); ok{
+			} else if m, ok := src.(map[string]interface{}); ok {
 				if t, ok := m["__type"]; ok {
 					if t == "Date" {
 						if ds, ok := m["iso"]; ok {

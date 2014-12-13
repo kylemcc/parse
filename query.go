@@ -641,7 +641,7 @@ func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
 					case string:
 						return map[string]string{
 							"__type": "Date",
-							"iso": v.(string),
+							"iso":    v.(string),
 						}
 					}
 				} else {
@@ -665,7 +665,7 @@ func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
 					}
 
 					return Pointer{
-						Id: id,
+						Id:        id,
 						ClassName: cname,
 					}
 				}

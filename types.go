@@ -73,14 +73,14 @@ type ACL struct {
 }
 
 type GeoPoint struct {
-	Latitude float64
+	Latitude  float64
 	Longitude float64
 }
 
 func (g GeoPoint) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		Type string `json:"__type"`
-		Latitude float64 `json:"latitude"`
+		Type      string  `json:"__type"`
+		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
 	}{
 		"GeoPoint",
@@ -91,8 +91,8 @@ func (g GeoPoint) MarshalJSON() ([]byte, error) {
 
 func (g *GeoPoint) UnmarshalJSON(b []byte) error {
 	s := struct {
-		Type string `json:"__type"`
-		Latitude float64 `json:"latitude"`
+		Type      string  `json:"__type"`
+		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
 	}{}
 	err := json.Unmarshal(b, &s)
@@ -112,15 +112,15 @@ type File struct {
 }
 
 type Pointer struct {
-	Id string
+	Id        string
 	ClassName string
 }
 
 func (p Pointer) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		Type string `json:"__type"`
+		Type      string `json:"__type"`
 		ClassName string `json:"className"`
-		Id string `json:"objectId"`
+		Id        string `json:"objectId"`
 	}{
 		"Pointer",
 		p.ClassName,

@@ -19,6 +19,7 @@ package main
 
 import (
     "fmt"
+	"time"
     
     "github.com/kylemcc/parse"
 )
@@ -27,9 +28,12 @@ func main() {
     parse.Initialize("APP_ID", "REST_KEY", "MASTER_KEY") // master key is optional
     
     user := parse.User{}
-    q := parse.NewQuery(&user)
+    q, err := parse.NewQuery(&user)
+	if err != nil {
+		panic(err)
+	}
     q.EqualTo("email", "kylemcc@gmail.com")
-    q.GreaterThan("numFollowers", 10).Limit(1) // API is chainable
+    q.GreaterThan("numFollowers", 10).OrderBy("-createdAt") // API is chainable
     err := q.First()
     if err != nil {
         if pe, ok := err.(parse.ParseError); ok {
@@ -38,6 +42,33 @@ func main() {
     }
     
     fmt.Printf("Retrieved user with id: %s\n", u.Id)
+
+	q2, _ := parse.NewQuery(&parse.User{})
+	q2.GreaterThan("createdAt", time.Date(2014, 01, 01))
+	rc := make(chan *parse.User)
+	ec := make(chan error)
+
+	// .Each will retrieve all results for a query and send them to the provided channel
+	q2.Each(rc, ec)
+	for {
+		select {
+		case u, ok := <-rc:
+			if ok {
+				fmt.Printf("received user: %v\n", u)
+			} else {
+				rc = nil
+			}
+		case err, ok := <-ec:
+			if ok {
+				fmt.Printf("error: %v\n", err)
+			} else {
+				ec = nil
+			}
+		}
+		if rc == nil && ec == nil {
+			break
+		}
+	}
 }
 ```
 

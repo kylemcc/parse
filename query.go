@@ -645,10 +645,8 @@ func quote(re string) string {
 }
 
 func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
-	fmt.Printf("inst:[%+v] f:[%s] v:[%v]\n", inst, f, v)
 	var fname string
 	fieldMap := getFieldNameMap(reflect.ValueOf(inst))
-	fmt.Printf("fnamemap:[%+v]\n", fieldMap)
 
 	if fn, ok := fieldMap[f]; ok {
 		fname = fn
@@ -692,13 +690,14 @@ func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
 				} else {
 					var id string
 					var cname string
-					fv := rviInst.FieldByName(fname)
-					fvi := reflect.Indirect(fv)
+					ftInst := reflect.Zero(ft)
 
-					if tmp, ok := fv.Interface().(iClassName); ok {
+					if tmp, ok := ftInst.Interface().(iClassName); ok {
+						cname = tmp.ClassName()
+					} else if tmp, ok := reflect.New(ft).Interface().(iClassName); ok {
 						cname = tmp.ClassName()
 					} else {
-						cname = fvi.Type().Name()
+						cname = ft.Name()
 					}
 
 					rv := reflect.ValueOf(v)

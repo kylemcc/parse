@@ -136,7 +136,7 @@ func (d Date) MarshalJSON() ([]byte, error) {
 		Iso  string `json:"iso"`
 	}{
 		"Date",
-		time.Time(d).Format(time.RFC3339),
+		time.Time(d).Format("2006-01-02T15:04:05.000Z"),
 	})
 }
 
@@ -153,7 +153,7 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("cannot unmarshal type %s to type Date", s.Type)
 	}
 
-	t, err := time.Parse(s.Iso, time.RFC3339Nano)
+	t, err := time.Parse(s.Iso, "2006-01-02T15:04:05.000Z")
 	if err != nil {
 		return err
 	}

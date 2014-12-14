@@ -77,7 +77,6 @@ func main() {
 - Missing query operations
     - Regex match
     - Match key in subquery
-	- First
 - Missing CRUD operations:
     - Create
     - Update

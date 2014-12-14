@@ -505,7 +505,10 @@ func (q *queryT) Find() error {
 }
 
 func (q *queryT) First() error {
-	return nil
+	q.op = otQuery
+	l := 1
+	q.limit = &l
+	return defaultClient.doRequest(q, q.inst)
 }
 
 func (q *queryT) Count() (int64, error) {

@@ -136,7 +136,7 @@ func (d Date) MarshalJSON() ([]byte, error) {
 		Iso  string `json:"iso"`
 	}{
 		"Date",
-		time.Time(d).Format("2006-01-02T15:04:05.000Z"),
+		time.Time(d).In(time.UTC).Format("2006-01-02T15:04:05.000Z"),
 	})
 }
 

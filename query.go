@@ -43,8 +43,7 @@ type Query interface {
 
 	Get(id string) error
 
-	OrderBy(f string) Query
-	OrderByFields(fs ...string) Query
+	OrderBy(fs ...string) Query
 	Limit(l int) Query
 	Skip(s int) Query
 	Include(f string) Query
@@ -126,12 +125,7 @@ func (q *queryT) Get(id string) error {
 	return defaultClient.doRequest(q, q.inst)
 }
 
-func (q *queryT) OrderBy(f string) Query {
-	q.orderBy = []string{f}
-	return q
-}
-
-func (q *queryT) OrderByFields(fs ...string) Query {
+func (q *queryT) OrderBy(fs ...string) Query {
 	q.orderBy = append(make([]string, len(fs)), fs...)
 	return q
 }

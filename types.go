@@ -34,7 +34,8 @@ type iParseEp interface {
 
 // A base type containing fields common to all Parse types
 //
-// Embed this struct in custom types
+// Embed this struct in custom types to avoid having to declare
+// these fields everywhere.
 type Base struct {
 	Id        string `parse:"objectId"`
 	CreatedAt *time.Time
@@ -43,7 +44,9 @@ type Base struct {
 	Extra     map[string]interface{}
 }
 
-// Represents the built-in Parse "User" class
+// Represents the built-in Parse "User" class. Embed this type in a custom
+// type containing any custom fields. When fetching user objects, any retrieved
+// fields with no matching struct field will be stored in User.Extra (map[string]interface{})
 type User struct {
 	Base
 }
@@ -56,7 +59,9 @@ func (u *User) Endpoint() string {
 	return "users"
 }
 
-// Represents the built-in Parse "Installation" class
+// Represents the built-in Parse "Installation" class. Embed this type in a custom
+// type containing any custom fields. When fetching user objects, any retrieved
+// fields with no matching struct field will be stored in User.Extra (map[string]interface{})
 type Installation struct {
 	Base
 }
@@ -72,6 +77,7 @@ func (i *Installation) Endpoint() string {
 type ACL struct {
 }
 
+// Represents the Parse GeoPoint type
 type GeoPoint struct {
 	Latitude  float64
 	Longitude float64
@@ -108,9 +114,13 @@ func (g *GeoPoint) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Represents the Parse File type
 type File struct {
 }
 
+// Represents a Parse Pointer type. When querying, creating, or updating
+// objects, any struct types will be automatically converted to and from Pointer
+// types as required. Direct use of this type should not be necessary
 type Pointer struct {
 	Id        string
 	ClassName string
@@ -128,6 +138,10 @@ func (p Pointer) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// Represents the Parse Date type. Values of type time.Time will
+// automatically converted to a Date type when constructing queries
+// or creating objects. The inverse is true for retrieving objects.
+// Direct use of this type should not be necessary
 type Date time.Time
 
 func (d Date) MarshalJSON() ([]byte, error) {

@@ -39,40 +39,165 @@ func (o opTypeT) method() string {
 }
 
 type Query interface {
+
+	// Use the Master Key for the given request.
 	UseMasterKey() Query
 
+	// Get retrieves the instance of the type pointed to by v and
+	// identified by id, and stores the result in v.
 	Get(id string) error
 
+	// Set the sort order for the query. The first argument sets the primary
+	// sort order. Subsequent arguments will set secondary sort orders. Results
+	// will be sorted in ascending order by default. Prefix field names with a
+	// '-' to sort in descending order. E.g.: q.OrderBy("-createdAt") will sort
+	// by the createdAt field in descending order.
 	OrderBy(fs ...string) Query
+
+	// Set the number of results to retrieve
 	Limit(l int) Query
+
+	// Set the number of results to skip before returning any results
 	Skip(s int) Query
+
+	// Specify nested fields to retrieve within the primary object. Use
+	// dot notation to retrieve further nested fields. E.g.:
+	// q.Include("user") or q.Include("user.location")
 	Include(f string) Query
+
+	// Only retrieve the specified fields
 	Keys(fs ...string) Query
 
+
+	// Add a constraint requiring the field specified by f be equal to the
+	// value represented by v
 	EqualTo(f string, v interface{}) Query
+
+
+	// Add a constraint requiring the field specified by f not be equal to the
+	// value represented by v
 	NotEqualTo(f string, v interface{}) Query
+
+	// Add a constraint requiring the field specified by f be greater than the
+	// value represented by v
 	GreaterThan(f string, v interface{}) Query
+
+	// Add a constraint requiring the field specified by f be greater than or
+	// or equal to the value represented by v
 	GreaterThanOrEqual(f string, v interface{}) Query
+
+	// Add a constraint requiring the field specified by f be less than the
+	// value represented by v
 	LessThan(f string, v interface{}) Query
+
+	// Add a constraint requiring the field specified by f be less than or
+	// or equal to the value represented by v
 	LessThanOrEqual(f string, v interface{}) Query
+
+
+	// Add a constraint requiring the field specified by f be equal to one
+	// of the values specified
 	In(f string, vs ...interface{}) Query
+
+	// Add a constraint requiring the field specified by f not be equal to any
+	// of the values specified
 	NotIn(f string, vs ...interface{}) Query
+
+	// Add a constraint requiring returned objects contain the field specified by f
 	Exists(f string) Query
+
+	// Add a constraint requiring returned objects do not contain the field specified by f
 	DoesNotExist(f string) Query
+
+	// Add a constraint requiring the field specified by f contain all
+	// of the values specified
 	All(f string, vs ...interface{}) Query
+
+	// Add a constraint requiring the string field specified by f contain
+	// the substring specified by v
 	Contains(f string, v string) Query
+
+	// Add a constraint requiring the string field specified by f start with
+	// the substring specified by v
 	StartsWith(f string, v string) Query
+
+	// Add a constraint requiring the string field specified by f end with
+	// the substring specified by v
 	EndsWith(f string, v string) Query
+
+	// Add a constraint requiring the location of GeoPoint field specified by f be
+	// within the rectangular geographic bounding box with a southwest corner
+	// represented by sw and a northeast corner represented by ne
 	WithinGeoBox(f string, sw GeoPoint, ne GeoPoint) Query
+
+	// Add a constraint require the location of GeoPoint field specified by f
+	// be near the point represented by g
 	Near(f string, g GeoPoint) Query
+
+	// Add a constraint require the location of GeoPoint field specified by f
+	// be near the point represented by g with a maximum distance in miles 
+	// represented by m
 	WithinMiles(f string, g GeoPoint, m float64) Query
+
+	// Add a constraint require the location of GeoPoint field specified by f
+	// be near the point represented by g with a maximum distance in kilometers 
+	// represented by m
 	WithinKilometers(f string, g GeoPoint, k float64) Query
+
+	// Add a constraint require the location of GeoPoint field specified by f
+	// be near the point represented by g with a maximum distance in radians 
+	// represented by m
 	WithinRadians(f string, g GeoPoint, r float64) Query
+
+	// Constructs a query where each result must satisfy one of the given
+	// subueries
+	// 
+	// E.g.:
+	//
+	// q, _ := parse.NewQuery(&parse.User{})
+	//
+	// sq1, _ := parse.NewQuery(&parse.User{})
+	// sq1.EqualTo("city", "Chicago")
+	//
+	// sq2, _ := parse.NewQuery(&parse.User{})
+	// sq2.GreaterThan("age", 30)
+	//
+	// sq3, _ := parse.NewQuery(&parse.User{})
+	// sq3.In("occupation", []string{"engineer", "developer"})
+	//
+	// q.Or(sq1, sq2, sq3)
+	// q.Each(...)
 	Or(qs ...Query) Query
 
+	// Iterate of each result of a query, passing the result to the provided
+	// channel rc. Errors are passed to the channel ec
 	Each(rc interface{}, ec chan<- error) error
+
+	// Retrieves a list of objects that satisfy the given query. The results
+	// are assigned to the slice provided to NewQuery.
+	//
+	// E.g.:
+	//
+	// users := make([]parse.User)
+	// q, _ := parse.NewQuery(&users)
+	// q.EqualTo("city", "Chicago")
+	// q.OrderBy("-createdAt")
+	// q.Limit(20)
+	// q.Find() // Retrieve the 20 newest users in Chicago
 	Find() error
+
+	// Retrieves the first result that satisfies the given query. The result
+	// is assigned to the value provided to NewQuery.
+	//
+	// E.g.:
+	// u := parse.User{}
+	// q, _ := parse.NewQuery(&u)
+	// q.EqualTo("city", "Chicago")
+	// q.OrderBy("-createdAt")
+	// q.First() // Retrieve the newest user in Chicago
 	First() error
+
+	// Retrieve the number of results that satisfy the given query
 	Count() (int64, error)
 }
 
@@ -94,6 +219,7 @@ type queryT struct {
 	shouldUseMasterKey bool
 }
 
+// Create a new query instance.
 func NewQuery(v interface{}) (Query, error) {
 	rv := reflect.ValueOf(v)
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
@@ -114,11 +240,6 @@ func (q *queryT) UseMasterKey() Query {
 	return q
 }
 
-// Get retrieves the instance of the type pointed to by v and
-// identified by id, and stores the result in v.
-//
-// v should should be a pointer to a struct represting the type
-// to be retrieved.
 func (q *queryT) Get(id string) error {
 	q.op = otGet
 	q.instId = &id

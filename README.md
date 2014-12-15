@@ -73,7 +73,6 @@ func main() {
 ```
 
 ###TODO
-- Documentation
 - Missing query operations
     - Regex match
     - Match key in subquery

@@ -53,26 +53,6 @@ type Client struct {
 
 var defaultClient *Client
 
-func (c *Client) logs() {
-	req, err := http.NewRequest("GET", "https://api.parse.com/logs", nil)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-
-	req.Header.Add(AppIdHeader, defaultClient.appId)
-	req.Header.Add(MasterKeyHeader, c.masterKey)
-
-	fmt.Printf("Executing request: [%+v]\n", req)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-
-	fmt.Printf("resp code: %d\n", resp.StatusCode)
-}
-
 func Initialize(appId, restKey, masterKey string) {
 	defaultClient = &Client{
 		appId:     appId,

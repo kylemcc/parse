@@ -3,6 +3,8 @@ package parse
 import (
 	"encoding/json"
 	"fmt"
+	"path"
+	"reflect"
 	"time"
 )
 
@@ -174,4 +176,40 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 
 	*d = Date(t)
 	return nil
+}
+
+func getEndpointBase(v interface{}) string {
+	var p string
+	var inst interface{}
+
+	rt := reflect.TypeOf(v)
+	rt = rt.Elem()
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array {
+		rte := rt.Elem()
+		var rv reflect.Value
+		if rte.Kind() == reflect.Ptr {
+			rv = reflect.New(rte.Elem())
+		} else {
+			rv = reflect.New(rte)
+		}
+		inst = rv.Interface()
+	} else {
+		inst = v
+	}
+
+	if iv, ok := inst.(iParseEp); ok {
+		p = iv.Endpoint()
+	} else {
+		var cname string
+		if v, ok := inst.(iClassName); ok {
+			cname = v.ClassName()
+		} else {
+			t := reflect.TypeOf(inst)
+			cname = t.Elem().Name()
+		}
+		p = path.Join("classes", cname)
+	}
+
+	p = path.Join(ParseVersion, p)
+	return p
 }

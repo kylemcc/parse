@@ -299,7 +299,7 @@ func populateValue(dst interface{}, src interface{}) error {
 			} else {
 				return fmt.Errorf("expected map[string]interface{} got %s", sv.Type())
 			}
-		} else if sv.Kind() == reflect.Slice && sv.Len() == 1{
+		} else if sv.Kind() == reflect.Slice && sv.Len() == 1 {
 			return populateValue(dst, sv.Index(0).Interface())
 		} else {
 			return fmt.Errorf("expected map, got %s", sv.Kind())

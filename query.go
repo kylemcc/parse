@@ -68,11 +68,9 @@ type Query interface {
 	// Only retrieve the specified fields
 	Keys(fs ...string) Query
 
-
 	// Add a constraint requiring the field specified by f be equal to the
 	// value represented by v
 	EqualTo(f string, v interface{}) Query
-
 
 	// Add a constraint requiring the field specified by f not be equal to the
 	// value represented by v
@@ -93,7 +91,6 @@ type Query interface {
 	// Add a constraint requiring the field specified by f be less than or
 	// or equal to the value represented by v
 	LessThanOrEqual(f string, v interface{}) Query
-
 
 	// Add a constraint requiring the field specified by f be equal to one
 	// of the values specified
@@ -135,23 +132,23 @@ type Query interface {
 	Near(f string, g GeoPoint) Query
 
 	// Add a constraint require the location of GeoPoint field specified by f
-	// be near the point represented by g with a maximum distance in miles 
+	// be near the point represented by g with a maximum distance in miles
 	// represented by m
 	WithinMiles(f string, g GeoPoint, m float64) Query
 
 	// Add a constraint require the location of GeoPoint field specified by f
-	// be near the point represented by g with a maximum distance in kilometers 
+	// be near the point represented by g with a maximum distance in kilometers
 	// represented by m
 	WithinKilometers(f string, g GeoPoint, k float64) Query
 
 	// Add a constraint require the location of GeoPoint field specified by f
-	// be near the point represented by g with a maximum distance in radians 
+	// be near the point represented by g with a maximum distance in radians
 	// represented by m
 	WithinRadians(f string, g GeoPoint, r float64) Query
 
 	// Constructs a query where each result must satisfy one of the given
 	// subueries
-	// 
+	//
 	// E.g.:
 	//
 	// q, _ := parse.NewQuery(&parse.User{})
@@ -692,39 +689,7 @@ func (q *queryT) method() string {
 
 func (q *queryT) endpoint() (string, error) {
 	u := url.URL{}
-	var p string
-
-	var inst interface{}
-
-	rt := reflect.TypeOf(q.inst)
-	rt = rt.Elem()
-	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array {
-		rte := rt.Elem()
-		var rv reflect.Value
-		if rte.Kind() == reflect.Ptr {
-			rv = reflect.New(rte.Elem())
-		} else {
-			rv = reflect.New(rte)
-		}
-		inst = rv.Interface()
-	} else {
-		inst = q.inst
-	}
-
-	if v, ok := inst.(iParseEp); ok {
-		p = v.Endpoint()
-	} else {
-		var cname string
-		if v, ok := inst.(iClassName); ok {
-			cname = v.ClassName()
-		} else {
-			t := reflect.TypeOf(inst)
-			cname = t.Elem().Name()
-		}
-		p = path.Join("classes", cname)
-	}
-
-	p = path.Join(ParseVersion, p)
+	p := getEndpointBase(q.inst)
 
 	switch q.op {
 	case otGet, otUpdate, otDelete:

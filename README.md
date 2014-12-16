@@ -79,6 +79,12 @@ func main() {
 - Missing CRUD operations:
     - Create
     - Update
+		- Field ops (__op):
+			- Increment
+			- Delete
+			- AddRelation
+			- RemoveRelation
+			- Add, AddUnique, Remove (arrays)
     - Delete
 - Login/Sessions
 - ACLs

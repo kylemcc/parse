@@ -244,7 +244,7 @@ func (q *queryT) Get(id string) error {
 }
 
 func (q *queryT) OrderBy(fs ...string) Query {
-	q.orderBy = append(make([]string, len(fs)), fs...)
+	q.orderBy = append(make([]string, 0, len(fs)), fs...)
 	return q
 }
 

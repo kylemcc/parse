@@ -10,6 +10,74 @@ import (
 	"strings"
 )
 
+type updateTypeT int
+
+const (
+	opSet updateTypeT = iota
+	opIncr
+	opDelete
+	opAdd
+	opAddUnique
+	opRemove
+	opAddRelation
+	opRemoveRelation
+)
+
+func (u updateTypeT) String() string {
+	switch u {
+	case opSet:
+		return "Set"
+	case opIncr:
+		return "Increment"
+	case opDelete:
+		return "Delete"
+	case opAdd:
+		return "Add"
+	case opAddUnique:
+		return "AddUnique"
+	case opRemove:
+		return "Remove"
+	case opAddRelation:
+		return "AddRelation"
+	case opRemoveRelation:
+		return "RemoveRelation"
+	}
+
+	return "Unknown"
+}
+
+func (u updateTypeT) argKey() string {
+	switch u {
+	case opIncr:
+		return "amount"
+	case opAdd, opAddUnique, opRemove, opAddRelation, opRemoveRelation:
+		return "objects"
+	}
+
+	return "unknown"
+}
+
+type updateOpT struct {
+	UpdateType updateTypeT
+	Value      interface{}
+}
+
+func (u updateOpT) MarshalJSON() ([]byte, error) {
+	switch u.UpdateType {
+	case opSet:
+		return json.Marshal(u.Value)
+	case opDelete:
+		return json.Marshal(map[string]interface{}{
+			"__op": u.UpdateType.String(),
+		})
+	default:
+		return json.Marshal(map[string]interface{}{
+			"__op":                u.UpdateType.String(),
+			u.UpdateType.argKey(): u.Value,
+		})
+	}
+}
+
 type Update interface {
 	Set(f string, v interface{}) Update
 	Increment(f string, v interface{}) Update
@@ -20,7 +88,7 @@ type Update interface {
 
 type updateT struct {
 	inst               interface{}
-	values             map[string]interface{}
+	values             map[string]updateOpT
 	shouldUseMasterKey bool
 	currentSession     *sessionT
 }
@@ -33,27 +101,22 @@ func NewUpdate(v interface{}) (Update, error) {
 
 	return &updateT{
 		inst:   v,
-		values: map[string]interface{}{},
+		values: map[string]updateOpT{},
 	}, nil
 }
 
 func (u *updateT) Set(f string, v interface{}) Update {
-	u.values[f] = v
+	u.values[f] = updateOpT{UpdateType: opSet, Value: v}
 	return u
 }
 
 func (u *updateT) Increment(f string, v interface{}) Update {
-	u.values[f] = map[string]interface{}{
-		"__op":   "Increment",
-		"amount": v,
-	}
+	u.values[f] = updateOpT{UpdateType: opIncr, Value: v}
 	return u
 }
 
 func (u *updateT) Delete(f string) Update {
-	u.values[f] = map[string]interface{}{
-		"__op": "Delete",
-	}
+	u.values[f] = updateOpT{UpdateType: opDelete}
 	return u
 }
 
@@ -72,13 +135,42 @@ func (u *updateT) Execute() error {
 
 		fname = strings.Title(fname)
 
+		dv := reflect.ValueOf(v.Value)
+		dvi := reflect.Indirect(dv)
+
 		if fv := rvi.FieldByName(fname); fv.IsValid() {
-			dv := reflect.ValueOf(v)
-			dvi := reflect.Indirect(dv)
 			fvi := reflect.Indirect(fv)
-			fvi.Set(dvi)
-		} else if e := rvi.FieldByName("Extra"); e.IsValid() && e.Kind() == reflect.Map {
-			e.SetMapIndex(reflect.ValueOf(k), reflect.ValueOf(v))
+
+			switch v.UpdateType {
+			case opSet:
+				fvi.Set(dvi)
+			case opIncr:
+				switch fvi.Kind() {
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					if dvi.Type().AssignableTo(fvi.Type()) {
+						current := fvi.Int()
+						amount := dvi.Int()
+						current += amount
+						fvi.Set(reflect.ValueOf(current).Convert(fvi.Type()))
+					}
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					if dvi.Type().AssignableTo(fvi.Type()) {
+						current := fvi.Uint()
+						amount := dvi.Uint()
+						current += amount
+						fvi.Set(reflect.ValueOf(current))
+					}
+				case reflect.Float32, reflect.Float64:
+					if dvi.Type().AssignableTo(fvi.Type()) {
+						current := fvi.Float()
+						amount := dvi.Float()
+						current += amount
+						fvi.Set(reflect.ValueOf(current))
+					}
+				}
+			case opDelete:
+				fv.Set(reflect.Zero(fv.Type()))
+			}
 		}
 	}
 	return defaultClient.doRequest(u, u.inst)

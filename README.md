@@ -80,8 +80,6 @@ func main() {
     - Create
     - Update
 		- Field ops (__op):
-			- Increment
-			- Delete
 			- AddRelation
 			- RemoveRelation
 			- Add, AddUnique, Remove (arrays)

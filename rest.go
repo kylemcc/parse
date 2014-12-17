@@ -28,6 +28,7 @@ type requestT interface {
 	body() (string, error)
 	useMasterKey() bool
 	session() *sessionT
+	contentType() string
 }
 
 type ParseError interface {
@@ -97,7 +98,8 @@ func (c *Client) doRequest(op requestT, dst interface{}) error {
 		}
 	}
 
-	fmt.Printf("Executing request: [%+v]\n", req)
+	req.Header.Add("Content-Type", op.contentType())
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err

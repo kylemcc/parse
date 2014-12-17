@@ -721,6 +721,10 @@ func (q *queryT) session() *sessionT {
 	return q.currentSession
 }
 
+func (q *queryT) contentType() string {
+	return "application/x-www-form-urlencoded"
+}
+
 // From the Javascript library - convert the string represented by re into a regex
 // value that matches it. MongoDb (what backs Parse) uses PCRE syntax
 func quote(re string) string {

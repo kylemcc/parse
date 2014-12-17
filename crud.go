@@ -77,6 +77,8 @@ func (u *updateT) Execute() error {
 			dvi := reflect.Indirect(dv)
 			fvi := reflect.Indirect(fv)
 			fvi.Set(dvi)
+		} else if e := rvi.FieldByName("Extra"); e.IsValid() && e.Kind() == reflect.Map {
+			e.SetMapIndex(reflect.ValueOf(k), reflect.ValueOf(v))
 		}
 	}
 	return defaultClient.doRequest(u, u.inst)
@@ -96,7 +98,8 @@ func (u *updateT) endpoint() (string, error) {
 	p := getEndpointBase(u.inst)
 
 	rv := reflect.ValueOf(u.inst)
-	if f := rv.FieldByName("Id"); f.IsValid() {
+	rvi := reflect.Indirect(rv)
+	if f := rvi.FieldByName("Id"); f.IsValid() {
 		if s, ok := f.Interface().(string); ok {
 			p = path.Join(p, s)
 		} else {
@@ -119,7 +122,7 @@ func (u *updateT) body() (string, error) {
 		return "", err
 	}
 
-	return url.QueryEscape(string(b)), nil
+	return string(b), nil
 }
 
 func (u *updateT) useMasterKey() bool {
@@ -128,6 +131,10 @@ func (u *updateT) useMasterKey() bool {
 
 func (u *updateT) session() *sessionT {
 	return u.currentSession
+}
+
+func (u *updateT) contentType() string {
+	return "application/json"
 }
 
 func UpdateModel(v interface{}) error {

@@ -82,6 +82,9 @@ type Update interface {
 	Set(f string, v interface{}) Update
 	Increment(f string, v interface{}) Update
 	Delete(f string) Update
+	Add(f string, vs... interface{}) Update
+	AddUnique(f string, vs... interface{}) Update
+	Remove(f string, vs... interface{}) Update
 	UseMasterKey() Update
 	Execute() error
 }
@@ -117,6 +120,21 @@ func (u *updateT) Increment(f string, v interface{}) Update {
 
 func (u *updateT) Delete(f string) Update {
 	u.values[f] = updateOpT{UpdateType: opDelete}
+	return u
+}
+
+func (u *updateT) Add(f string, vs ...interface{}) Update {
+	u.values[f] = updateOpT{UpdateType: opAdd, Value:vs}
+	return u
+}
+
+func (u *updateT) AddUnique(f string, vs ...interface{}) Update {
+	u.values[f] = updateOpT{UpdateType: opAddUnique, Value:vs}
+	return u
+}
+
+func (u *updateT) Remove(f string, vs ...interface{}) Update {
+	u.values[f] = updateOpT{UpdateType: opRemove, Value:vs}
 	return u
 }
 

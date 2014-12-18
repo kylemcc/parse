@@ -82,7 +82,6 @@ func main() {
 		- Field ops (__op):
 			- AddRelation
 			- RemoveRelation
-			- Add, AddUnique, Remove (arrays)
     - Delete
 - ACLs
 - Cloud Functions

@@ -84,7 +84,6 @@ func main() {
 			- RemoveRelation
 			- Add, AddUnique, Remove (arrays)
     - Delete
-- Login/Sessions
 - ACLs
 - Cloud Functions
 - Background Jobs

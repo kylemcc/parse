@@ -272,7 +272,7 @@ func populateValue(dst interface{}, src interface{}) error {
 						k = nk
 					}
 
-					k = strings.Title(k) // Make first letter uppercase. TODO: find better way
+					k = firstToUpper(k)
 
 					if f := dvi.FieldByName(k); f.IsValid() {
 						if f.Kind() == reflect.Ptr {

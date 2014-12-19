@@ -722,7 +722,7 @@ func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
 	} else {
 		fname = f
 	}
-	fname = strings.Title(fname)
+	fname = firstToUpper(fname)
 
 	rvInst := reflect.ValueOf(inst)
 	rviInst := reflect.Indirect(rvInst)

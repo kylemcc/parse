@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"path"
 	"reflect"
-	"strings"
 )
 
 type updateTypeT int
@@ -151,7 +150,7 @@ func (u *updateT) Execute() error {
 			fname = k
 		}
 
-		fname = strings.Title(fname)
+		fname = firstToUpper(fname)
 
 		dv := reflect.ValueOf(v.Value)
 		dvi := reflect.Indirect(dv)
@@ -245,8 +244,4 @@ func (u *updateT) session() *sessionT {
 
 func (u *updateT) contentType() string {
 	return "application/json"
-}
-
-func UpdateModel(v interface{}) error {
-	return nil
 }

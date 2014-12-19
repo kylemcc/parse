@@ -78,13 +78,33 @@ func (u updateOpT) MarshalJSON() ([]byte, error) {
 }
 
 type Update interface {
+
+	//Set the field specified by f to the value of v
 	Set(f string, v interface{}) Update
+
+	// Increment the field specified by f by the amount specified by v.
+	// v should be a numeric type
 	Increment(f string, v interface{}) Update
+
+	// Delete the field specified by f from the instance being updated
 	Delete(f string) Update
+
+	// Append the values provided to the Array field specified by f. This operation
+	// is atomic
 	Add(f string, vs ...interface{}) Update
+
+	// Add any values provided that were not alread present to the Array field
+	// specified by f. This operation is atomic
 	AddUnique(f string, vs ...interface{}) Update
+
+	// Remove the provided values from the array field specified by f
 	Remove(f string, vs ...interface{}) Update
+
+	// Use the Master Key for this update request
 	UseMasterKey() Update
+
+	// Execute this update. This method also updates the proper fields
+	// on the provided value with their repective new values
 	Execute() error
 }
 
@@ -95,6 +115,10 @@ type updateT struct {
 	currentSession     *sessionT
 }
 
+// Create a new update request for the Parse object represented by v.
+//
+// Note: v should be a pointer to a struct whose name represents a Parse class,
+// or that implements the ClassName method
 func NewUpdate(v interface{}) (Update, error) {
 	rv := reflect.ValueOf(v)
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {

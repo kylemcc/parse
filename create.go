@@ -74,6 +74,12 @@ func (c *createT) contentType() string {
 	return "application/json"
 }
 
+// Save a new instance of the type pointed to by v to the Parse database. If
+// useMasteKey=true, the Master Key will be used for the creation request. On a
+// successful request, the CreatedAt field will be set on v.
+//
+// Note: v should be a pointer to a struct whose name represents a Parse class,
+// or that implements the ClassName method
 func Create(v interface{}, useMasterKey bool) error {
 	return create(v, useMasterKey, nil)
 }

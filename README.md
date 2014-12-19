@@ -77,7 +77,6 @@ func main() {
     - Regex match
     - Match key in subquery
 - Missing CRUD operations:
-    - Create
     - Update
 		- Field ops (__op):
 			- AddRelation

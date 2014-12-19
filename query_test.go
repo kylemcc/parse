@@ -68,7 +68,7 @@ func TestEndpointGetUpdateDelete(t *testing.T) {
 		{&CustomClassCustomEndpoint{}, "Cc3", "https://api.parse.com/1/custom/class/endpoint/Cc3"},
 	}
 
-	ops := []opTypeT{otGet, otDelete, otUpdate}
+	ops := []opTypeT{otGet}
 
 	for _, tc := range testCases {
 		q, err := NewQuery(tc.inst)

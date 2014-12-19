@@ -18,25 +18,7 @@ const (
 	otInval opTypeT = iota
 	otGet
 	otQuery
-	otCreate
-	otUpdate
-	otDelete
 )
-
-func (o opTypeT) method() string {
-	switch o {
-	case otGet, otQuery:
-		return "GET"
-	case otCreate:
-		return "POST"
-	case otUpdate:
-		return "PUT"
-	case otDelete:
-		return "DELETE"
-	default:
-		return "GET"
-	}
-}
 
 type Query interface {
 
@@ -684,7 +666,7 @@ func (q *queryT) payload() (string, error) {
 
 // Implement the operationT interface
 func (q *queryT) method() string {
-	return q.op.method()
+	return "GET"
 }
 
 func (q *queryT) endpoint() (string, error) {
@@ -692,7 +674,7 @@ func (q *queryT) endpoint() (string, error) {
 	p := getEndpointBase(q.inst)
 
 	switch q.op {
-	case otGet, otUpdate, otDelete:
+	case otGet:
 		p = path.Join(p, *q.instId)
 	}
 

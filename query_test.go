@@ -240,7 +240,7 @@ func TestFilters(t *testing.T) {
 	}
 
 	expected := map[string]interface{}{}
-	eb, _ := json.Marshal(&em)
+	eb, _ := json.Marshal(em)
 	_ = json.Unmarshal(eb, &expected)
 
 	b, err := json.Marshal(&qt.where)

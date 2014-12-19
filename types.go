@@ -39,11 +39,11 @@ type iParseEp interface {
 // Embed this struct in custom types to avoid having to declare
 // these fields everywhere.
 type Base struct {
-	Id        string `parse:"objectId"`
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
-	Acl       *ACL
-	Extra     map[string]interface{}
+	Id        string     `parse:"objectId"`
+	CreatedAt *time.Time `parse:"-"`
+	UpdatedAt *time.Time `parse:"-"`
+	ACL       *ACL
+	Extra     map[string]interface{} `parse:"-"`
 }
 
 // Represents the built-in Parse "User" class. Embed this type in a custom

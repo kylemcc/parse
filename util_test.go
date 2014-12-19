@@ -3,8 +3,8 @@ package parse
 import "testing"
 
 func TestFirstToUpper(t *testing.T) {
-	cases := []struct{
-		input string
+	cases := []struct {
+		input    string
 		expected string
 	}{
 		{"abcd", "Abcd"},
@@ -28,8 +28,8 @@ func BenchmarkFirstToUpper(b *testing.B) {
 }
 
 func TestFirstToLower(t *testing.T) {
-	cases := []struct{
-		input string
+	cases := []struct {
+		input    string
 		expected string
 	}{
 		{"abcd", "abcd"},

@@ -6,6 +6,7 @@ type Session interface {
 	User() *User
 	NewQuery(v interface{}) (Query, error)
 	NewUpdate(v interface{}) (Update, error)
+	Create(v interface{}) error
 }
 
 type loginRequestT struct {
@@ -33,6 +34,10 @@ func Login(username, password string) (Session, error) {
 	return s, nil
 }
 
+func (s *sessionT) User() *User {
+	return s.user
+}
+
 func (s *sessionT) NewQuery(v interface{}) (Query, error) {
 	q, err := NewQuery(v)
 	if err == nil {
@@ -53,8 +58,8 @@ func (s *sessionT) NewUpdate(v interface{}) (Update, error) {
 	return u, err
 }
 
-func (s *sessionT) User() *User {
-	return s.user
+func (s *sessionT) Create(v interface{}) error {
+	return create(v, false, s)
 }
 
 func (s *loginRequestT) method() string {

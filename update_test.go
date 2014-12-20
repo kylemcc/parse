@@ -200,6 +200,8 @@ func TestExecuteUpdatesStruct(t *testing.T) {
 		F1:        "string",
 		F2:        time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC),
 		F3:        time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC),
+		F4:        User{Base{Id: "abcd"}},
+		F5:        User{Base{Id: "efghi"}},
 		F6:        true,
 		F7:        11,
 		F8:        75,

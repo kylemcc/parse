@@ -304,18 +304,20 @@ func populateValue(dst interface{}, src interface{}) error {
 						f.SetMapIndex(reflect.ValueOf(k), reflect.ValueOf(v))
 					}
 				}
-			} else if svi.Type().AssignableTo(dvi.Type()) {
-				dvi.Set(svi)
 			} else {
 				return fmt.Errorf("expected map[string]interface{} got %s", sv.Type())
 			}
 		} else if sv.Kind() == reflect.Slice && sv.Len() == 1 {
 			return populateValue(dst, sv.Index(0).Interface())
+		} else if svi.Type().AssignableTo(dvi.Type()) {
+			dvi.Set(svi)
 		} else if p, ok := src.(Pointer); ok {
-			newV := reflect.Zero(dvi.Type())
-			if f := newV.FieldByName("Id"); f.CanSet() {
+			newv := reflect.New(dvi.Type())
+			newvi := reflect.Indirect(newv)
+			if f := newvi.FieldByName("Id"); f.CanSet() {
 				f.Set(reflect.ValueOf(p.Id))
 			}
+			return populateValue(dst, newv.Interface())
 		} else {
 			return fmt.Errorf("expected map, got %s", sv.Kind())
 		}

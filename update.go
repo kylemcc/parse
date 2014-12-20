@@ -243,7 +243,7 @@ func (u *updateT) endpoint() (string, error) {
 	}
 
 	_url.Scheme = "https"
-	_url.Host = "api.parse.com"
+	_url.Host = parseHost
 	_url.Path = p
 
 	return _url.String(), nil

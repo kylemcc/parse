@@ -684,7 +684,7 @@ func (q *queryT) endpoint() (string, error) {
 	}
 
 	u.Scheme = "https"
-	u.Host = "api.parse.com"
+	u.Host = parseHost
 	u.RawQuery = qs
 	u.Path = p
 

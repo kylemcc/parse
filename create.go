@@ -3,7 +3,6 @@ package parse
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/url"
 	"reflect"
 )
@@ -22,7 +21,7 @@ func (c *createT) endpoint() (string, error) {
 	p := getEndpointBase(c.v)
 	u := url.URL{}
 	u.Scheme = "https"
-	u.Host = "api.parse.com"
+	u.Host = parseHost
 	u.Path = p
 
 	return u.String(), nil
@@ -58,7 +57,6 @@ func (c *createT) body() (string, error) {
 		return "", err
 	}
 
-	fmt.Printf("req body: %s\n", b)
 	return string(b), nil
 }
 

@@ -2,8 +2,11 @@ package parse
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestCreateRequiresPointer(t *testing.T) {
@@ -22,6 +25,7 @@ type TestUser struct {
 	Email     string
 	Ignore    string `parse:"-"`
 	FCount    int    `parse:"followers"`
+	Base
 }
 
 func TestPayload(t *testing.T) {
@@ -64,5 +68,80 @@ func TestPayload(t *testing.T) {
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("payload different from expected. expected:\n%s\n\ngot:\n%s\n", eb, b)
+	}
+}
+
+func TestCreate(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if h := r.Header.Get(AppIdHeader); h != "app_id" {
+			t.Errorf("request did not have App ID header set!")
+		}
+
+		if h := r.Header.Get(RestKeyHeader); h != "rest_key" {
+			t.Errorf("request did not have Rest Key header set!")
+		}
+
+		if h := r.Header.Get(MasterKeyHeader); h != "" {
+			t.Errorf("request had Master Key header set!")
+		}
+
+		fmt.Fprintf(w, `{"createdAt":"2014-12-19T18:05:57Z","objectId":"abcDEF"}`)
+	})
+	defer teardownTestServer()
+
+	Initialize("app_id", "rest_key", "master_key")
+
+	u := TestUser{
+		FirstName: "Kyle",
+		LastName:  "M",
+		Email:     "kylemcc@gmail.com",
+		FCount:    11,
+	}
+
+	err := Create(&u, false)
+	if err != nil {
+		t.Errorf("Unexpected error creating object: %v\n", err)
+		t.FailNow()
+	}
+
+	if u.Id != "abcDEF" {
+		t.Errorf("Create did not set proper id on instance. u.Id: %v\n", u.Id)
+	}
+
+	if *u.CreatedAt != time.Date(2014, 12, 19, 18, 5, 57, 0, time.UTC) {
+		t.Errorf("Create did not set proper createdAt date. u.CreatedAt: %v\n", u.CreatedAt)
+	}
+}
+
+func TestCreateUseMasterKey(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if h := r.Header.Get(AppIdHeader); h != "app_id" {
+			t.Errorf("request did not have App ID header set!")
+		}
+
+		if h := r.Header.Get(RestKeyHeader); h != "" {
+			t.Errorf("request had Rest Key header set!")
+		}
+
+		if h := r.Header.Get(MasterKeyHeader); h != "master_key" {
+			t.Errorf("request did not have Master Key header set!")
+		}
+
+		fmt.Fprintf(w, `{"createdAt":"2014-12-19T18:05:57Z","objectId":"abcDEF"}`)
+	})
+	defer teardownTestServer()
+
+	Initialize("app_id", "rest_key", "master_key")
+
+	u := TestUser{
+		FirstName: "Kyle",
+		LastName:  "M",
+		Email:     "kylemcc@gmail.com",
+		FCount:    11,
+	}
+
+	err := Create(&u, true)
+	if err != nil {
+		t.Errorf("unexpected error on create: %v\n", err)
 	}
 }

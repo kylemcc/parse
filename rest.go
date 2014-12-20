@@ -20,6 +20,8 @@ const (
 	SessionTokenHeader = "X-Parse-Session-Token"
 )
 
+var parseHost = "api.parse.com"
+var httpClient = http.DefaultClient
 var fieldNameCache map[reflect.Type]map[string]string = make(map[reflect.Type]map[string]string)
 
 type requestT interface {
@@ -100,7 +102,7 @@ func (c *Client) doRequest(op requestT, dst interface{}) error {
 
 	req.Header.Add("Content-Type", op.contentType())
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

@@ -220,4 +220,49 @@ func TestExecuteUpdatesStruct(t *testing.T) {
 }
 
 func TestUpdateUseMasterKey(t *testing.T) {
+	shouldHaveMasterKey := false
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if h := r.Header.Get(AppIdHeader); h != "app_id" {
+			t.Errorf("request did not have App ID header set!")
+		}
+
+		if h := r.Header.Get(SessionTokenHeader); h != "" {
+			t.Errorf("request had Session Token header set!")
+		}
+
+		if shouldHaveMasterKey {
+			if h := r.Header.Get(RestKeyHeader); h != "" {
+				t.Errorf("request had Rest Key header set!")
+			}
+
+			if h := r.Header.Get(MasterKeyHeader); h != "master_key" {
+				t.Errorf("request did not have Master Key header set!")
+			}
+		} else {
+			if h := r.Header.Get(RestKeyHeader); h != "rest_key" {
+				t.Errorf("request did not have Rest Key header set!")
+			}
+
+			if h := r.Header.Get(MasterKeyHeader); h != "" {
+				t.Errorf("request had Master Key header set!")
+			}
+		}
+
+		fmt.Fprintf(w, `{"updatedAt":"2014-12-20T18:23:49.123Z","f11":["abc","abc","def"],"f12":["123","456"],"f13":["tsr"]}`)
+	})
+	defer teardownTestServer()
+
+	u1, _ := NewUpdate(&User{})
+	u1.Set("city", "Chicago")
+	if err := u1.Execute(); err != nil {
+		t.Errorf("Unexpected error executing update: %v\n", err)
+	}
+
+	u2, _ := NewUpdate(&User{})
+	u2.Set("city", "Chicago")
+	u2.UseMasterKey()
+	shouldHaveMasterKey = true
+	if err := u2.Execute(); err != nil {
+		t.Errorf("Unexpected error executing update: %v\n", err)
+	}
 }

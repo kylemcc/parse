@@ -267,7 +267,7 @@ func TestQueryRequiresPointer(t *testing.T) {
 	u := User{}
 	expected := "v must be a non-nil pointer"
 	if _, err := NewQuery(u); err == nil {
-		t.Error("Create should return an error when argument is not a pointer")
+		t.Error("NewQuery should return an error when argument is not a pointer")
 	} else if err.Error() != expected {
 		t.Errorf("Unexpected error message. Got [%s] expected [%s]\n", err, expected)
 	}
@@ -602,7 +602,7 @@ func TestGetQueryRepr(t *testing.T) {
 		{
 			"2014-12-19T16:47:23.120Z",
 			"f6",
-			map[string]string{
+			map[string]interface{}{
 				"iso":    "2014-12-19T16:47:23.120Z",
 				"__type": "Date",
 			},

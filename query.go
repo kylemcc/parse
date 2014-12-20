@@ -751,7 +751,7 @@ func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
 					case Date, *Date:
 						return v
 					case string:
-						return map[string]string{
+						return map[string]interface{}{
 							"__type": "Date",
 							"iso":    v.(string),
 						}

@@ -132,7 +132,7 @@ func NewUpdate(v interface{}) (Update, error) {
 }
 
 func (u *updateT) Set(f string, v interface{}) Update {
-	u.values[f] = updateOpT{UpdateType: opSet, Value: v}
+	u.values[f] = updateOpT{UpdateType: opSet, Value: getQueryRepr(u.inst, f, v)}
 	return u
 }
 
@@ -184,29 +184,37 @@ func (u *updateT) Execute() error {
 
 			switch v.UpdateType {
 			case opSet:
-				fvi.Set(dvi)
+				var tmp reflect.Value
+				if fv.Kind() == reflect.Ptr {
+					tmp = fv
+				} else {
+					tmp = fv.Addr()
+				}
+				if err := populateValue(tmp.Interface(), v.Value); err != nil {
+					return err
+				}
 			case opIncr:
 				switch fvi.Kind() {
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					if dvi.Type().AssignableTo(fvi.Type()) {
+					if dvi.Type().ConvertibleTo(fvi.Type()) {
 						current := fvi.Int()
-						amount := dvi.Int()
+						amount := dvi.Convert(fvi.Type()).Int()
 						current += amount
 						fvi.Set(reflect.ValueOf(current).Convert(fvi.Type()))
 					}
 				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					if dvi.Type().AssignableTo(fvi.Type()) {
+					if dvi.Type().ConvertibleTo(fvi.Type()) {
 						current := fvi.Uint()
-						amount := dvi.Uint()
+						amount := dvi.Convert(fvi.Type()).Uint()
 						current += amount
-						fvi.Set(reflect.ValueOf(current))
+						fvi.Set(reflect.ValueOf(current).Convert(fvi.Type()))
 					}
 				case reflect.Float32, reflect.Float64:
-					if dvi.Type().AssignableTo(fvi.Type()) {
+					if dvi.Type().ConvertibleTo(fvi.Type()) {
 						current := fvi.Float()
-						amount := dvi.Float()
+						amount := dvi.Convert(fvi.Type()).Float()
 						current += amount
-						fvi.Set(reflect.ValueOf(current))
+						fvi.Set(reflect.ValueOf(current).Convert(fvi.Type()))
 					}
 				}
 			case opDelete:

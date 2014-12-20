@@ -201,11 +201,13 @@ func populateValue(dst interface{}, src interface{}) error {
 	dvi := reflect.Indirect(dv)
 
 	sv := reflect.ValueOf(src)
+	svi := reflect.Indirect(sv)
 
 	switch dvi.Kind() {
 	case reflect.Slice, reflect.Array:
 		if sv.Kind() == reflect.Slice || sv.Kind() == reflect.Array {
 			dt := dvi.Type().Elem()
+			dvi.Set(reflect.MakeSlice(reflect.SliceOf(dt), 0, sv.Len()))
 			for i := 0; i < sv.Len(); i++ {
 				var newV reflect.Value
 				if dt.Kind() == reflect.Ptr {
@@ -255,6 +257,8 @@ func populateValue(dst interface{}, src interface{}) error {
 				} else {
 					return fmt.Errorf("no __type in object: %v", m)
 				}
+			} else if svi.Type().ConvertibleTo(dvi.Type()) {
+				dvi.Set(sv.Convert(dvi.Type()))
 			} else {
 				return fmt.Errorf("expected string or Date type, got %s", sv.Type())
 			}
@@ -300,6 +304,8 @@ func populateValue(dst interface{}, src interface{}) error {
 						f.SetMapIndex(reflect.ValueOf(k), reflect.ValueOf(v))
 					}
 				}
+			} else if svi.Type().AssignableTo(dvi.Type()) {
+				dvi.Set(svi)
 			} else {
 				return fmt.Errorf("expected map[string]interface{} got %s", sv.Type())
 			}

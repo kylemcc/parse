@@ -39,9 +39,9 @@ type iParseEp interface {
 // Embed this struct in custom types to avoid having to declare
 // these fields everywhere.
 type Base struct {
-	Id        string     `parse:"objectId"`
-	CreatedAt *time.Time `parse:"-"`
-	UpdatedAt *time.Time `parse:"-"`
+	Id        string    `parse:"objectId"`
+	CreatedAt time.Time `parse:"-"`
+	UpdatedAt time.Time `parse:"-"`
 	ACL       *ACL
 	Extra     map[string]interface{} `parse:"-"`
 }

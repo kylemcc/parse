@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"testing"
 )
 
 type ctxT struct {
@@ -43,4 +45,9 @@ func teardownTestServer() {
 	ctx.ts.Close()
 	parseHost = ctx.oldHost
 	httpClient = ctx.oldHttpClient
+}
+
+func TestMain(m *testing.M) {
+	Initialize("app_id", "rest_key", "master_key")
+	os.Exit(m.Run())
 }

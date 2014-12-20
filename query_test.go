@@ -2,6 +2,8 @@ package parse
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 	"time"
@@ -258,5 +260,367 @@ func TestFilters(t *testing.T) {
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("where different from expected. expected:\n%s\n\ngot:\n%s\n", eb, b)
+	}
+}
+
+func TestQueryRequiresPointer(t *testing.T) {
+	u := User{}
+	expected := "v must be a non-nil pointer"
+	if _, err := NewQuery(u); err == nil {
+		t.Error("Create should return an error when argument is not a pointer")
+	} else if err.Error() != expected {
+		t.Errorf("Unexpected error message. Got [%s] expected [%s]\n", err, expected)
+	}
+}
+
+func TestQueryRequest(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if h := r.Header.Get(AppIdHeader); h != "app_id" {
+			t.Errorf("request did not have App ID header set!")
+		}
+
+		if h := r.Header.Get(RestKeyHeader); h != "rest_key" {
+			t.Errorf("request did not have Rest Key header set!")
+		}
+
+		if h := r.Header.Get(MasterKeyHeader); h != "" {
+			t.Errorf("request had Master Key header set!")
+		}
+
+		r.ParseForm()
+		whereStr := r.Form.Get("where")
+		where := map[string]interface{}{}
+		err := json.Unmarshal([]byte(whereStr), &where)
+		if err != nil {
+			t.Errorf("unexpected error unmarshaling where: %v\n", err)
+			t.FailNow()
+		}
+
+		ew := map[string]interface{}{
+			"city": "Chicago",
+			"age": map[string]interface{}{
+				"$gt": 30,
+			},
+		}
+		ewb, err := json.Marshal(ew)
+		if err != nil {
+			t.Errorf("unexpected error unmarshaling expected where: %v\n", err)
+			t.FailNow()
+		}
+		expected := map[string]interface{}{}
+		err = json.Unmarshal(ewb, &expected)
+
+		if !reflect.DeepEqual(expected, where) {
+			t.Errorf("query where argument different from expected. Got [%s] expected [%s]\n", whereStr, ewb)
+			t.FailNow()
+		}
+
+		fmt.Fprintf(w, `{"results":[{"objectId": "123", "createdAt":"2012-04-14T19:23:10.123Z"}]}`)
+	})
+	defer teardownTestServer()
+
+	u := User{}
+	q, err := NewQuery(&u)
+	if err != nil {
+		t.Errorf("Unexpected error creating query: %v\n", err)
+		t.FailNow()
+	}
+
+	q.EqualTo("city", "Chicago")
+	q.GreaterThan("age", 30)
+	err = q.First()
+	if err != nil {
+		t.Errorf("Error running query: %v\n", err)
+	}
+
+	if u.Id != "123" {
+		t.Errorf("Query did not fill in u.Id")
+	}
+}
+
+func TestQueryUseMasterKey(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if h := r.Header.Get(AppIdHeader); h != "app_id" {
+			t.Errorf("request did not have App ID header set!")
+		}
+
+		if h := r.Header.Get(RestKeyHeader); h != "" {
+			t.Errorf("request had Rest Key header set!")
+		}
+
+		if h := r.Header.Get(MasterKeyHeader); h != "master_key" {
+			t.Errorf("request did not have Master Key header set!")
+		}
+		fmt.Fprintf(w, `{"results":[{"objectId": "123", "createdAt":"2012-04-14T19:23:10.123Z"}]}`)
+	})
+	defer teardownTestServer()
+
+	u := User{}
+	q, err := NewQuery(&u)
+	if err != nil {
+		t.Errorf("Unexpected error creating query: %v\n", err)
+		t.FailNow()
+	}
+
+	q.EqualTo("city", "Chicago").GreaterThan("age", 30).UseMasterKey()
+	err = q.First()
+	if err != nil {
+		t.Errorf("Error running query: %v\n", err)
+	}
+}
+
+func TestFirst(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		if r.Form.Get("limit") != "1" {
+			t.Errorf("limit was not 1. got [%d]\n", r.Form.Get("limit"))
+		}
+		fmt.Fprintf(w, `{"results":[{"objectId": "123", "createdAt":"2012-04-14T19:23:10.123Z"}]}`)
+	})
+	defer teardownTestServer()
+
+	u := User{}
+	q, err := NewQuery(&u)
+	if err != nil {
+		t.Errorf("Unexpected error creating query: %v\n", err)
+		t.FailNow()
+	}
+
+	q.EqualTo("city", "Chicago").GreaterThan("age", 30).UseMasterKey()
+	err = q.First()
+	if err != nil {
+		t.Errorf("Error running query: %v\n", err)
+	}
+
+	if u.Id != "123" {
+		t.Errorf("Query did not populate struct with correct value. Got: %v\n", u.Id)
+	}
+
+	us := make([]User, 0, 1)
+	q2, err := NewQuery(&us)
+	if err != nil {
+		t.Errorf("Unexpected error creating query: %v\n", err)
+		t.FailNow()
+	}
+	err = q2.First()
+	if err != nil {
+		t.Errorf("Error running query: %v\n", err)
+	}
+
+	if len(us) != 1 {
+		t.Errorf("Query did not populate slice with correct number of values. Len: %v\n", len(us))
+		t.FailNow()
+	}
+
+	if us[0].Id != "123" {
+		t.Errorf("Query did not populate struct with correct value. Got: %v\n", us[0].Id)
+	}
+}
+
+func TestCount(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		fmt.Fprintf(w, `{"results":[],"count":73}`)
+	})
+	defer teardownTestServer()
+
+	q, err := NewQuery(&User{})
+	if err != nil {
+		t.Errorf("Unexpected error creating query: %v\n", err)
+		t.FailNow()
+	}
+
+	q.EqualTo("city", "Chicago")
+	cnt, err := q.Count()
+	if err != nil {
+		t.Errorf("Error running query: %v\n", err)
+	}
+
+	if cnt != 73 {
+		t.Errorf("Count returned incorrect value. Got [%d] expected [%d]\n", cnt, 73)
+	}
+}
+
+func TestFind(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"results":[{"objectId": "123", "createdAt":"2012-04-14T19:23:10.123Z"},{"objectId":"abc","createdAt":"2012-04-14T19:23:10.123Z"}]}`)
+	})
+	defer teardownTestServer()
+
+	us := make([]User, 0, 1)
+	q, err := NewQuery(&us)
+	if err != nil {
+		t.Errorf("Unexpected error creating query: %v\n", err)
+		t.FailNow()
+	}
+	err = q.Find()
+	if err != nil {
+		t.Errorf("Error running query: %v\n", err)
+	}
+
+	expectedIds := []string{"123", "abc"}
+	if len(us) != len(expectedIds) {
+		t.Errorf("Find returned the wrong number of results. Got [%d] expected [%d]\n", len(us), len(expectedIds))
+	}
+
+	for i, v := range expectedIds {
+		if v != us[i].Id {
+			t.Errorf("Find did not return proper result at index %d: Got [%v] expected [%v]\n", i, us[i].Id, v)
+		}
+	}
+}
+
+func TestGet(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/1/users/abc123" {
+			t.Errorf("Get requested wrong path. Got [%s] expected [%s]\n", r.URL.Path, "/1/users/abc123")
+		}
+		fmt.Fprintf(w, `{"objectId":"abc123","createdAt":"2012-04-14T19:23:10.123Z"}`)
+	})
+	defer teardownTestServer()
+
+	u := User{}
+	q, err := NewQuery(&u)
+	if err != nil {
+		t.Errorf("Unexpected error creating query: %v\n", err)
+		t.FailNow()
+	}
+	err = q.Get("abc123")
+	if err != nil {
+		t.Errorf("Error running query: %v\n", err)
+	}
+
+	if u.Id != "abc123" {
+		t.Errorf("Get returned wrong Id. Got: %v\n", u.Id)
+	}
+}
+
+func TestEach(t *testing.T) {
+	numRequests := 0
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		numRequests++
+		r.ParseForm()
+		if r.Form.Get("limit") != "100" {
+			t.Errorf("Did not get proper limit. Expected 100 got [%s]\n", r.Form.Get("limit"))
+		}
+		if r.Form.Get("order") != "objectId" {
+			t.Errorf("Did not get proper order. Expected objectId got [%s]\n", r.Form.Get("order"))
+		}
+
+		ret := make([]map[string]interface{}, 0, 100)
+		if where := r.Form.Get("where"); where == "" {
+			for i := 0; i < 100; i++ {
+				ret = append(ret, map[string]interface{}{"objectId": string(rune(i + 65)), "createdAt": "2014-12-19T22:22:22.123Z"})
+			}
+		} else {
+			for i := 0; i < 50; i++ {
+				ret = append(ret, map[string]interface{}{"objectId": string(rune(i + 200)), "createdAt": "2014-12-19T22:22:22.123Z"})
+			}
+		}
+		j, _ := json.Marshal(map[string]interface{}{"results": ret})
+		fmt.Fprintf(w, string(j))
+	})
+	defer teardownTestServer()
+
+	q, err := NewQuery(&User{})
+	if err != nil {
+		t.Errorf("Unexpected error creating query: %v\n", err)
+		t.FailNow()
+	}
+
+	rc := make(chan *User)
+	ec := make(chan error)
+
+	err = q.Each(rc, ec)
+	if err != nil {
+		t.Errorf("Unexpected error executing each: %v\n", err)
+		t.FailNow()
+	}
+
+	users := make([]*User, 0)
+	errors := make([]error, 0)
+	for {
+		select {
+		case u, ok := <-rc:
+			if !ok {
+				rc = nil
+			}
+			if u != nil {
+				users = append(users, u)
+			}
+		case err, ok := <-ec:
+			if !ok {
+				ec = nil
+			}
+			if err != nil {
+				errors = append(errors, err)
+			}
+		}
+		if rc == nil && ec == nil {
+			break
+		}
+	}
+
+	if numRequests != 2 {
+		t.Errorf("Each did not execute the expected number of requests. Expected 2, got: %d\n", numRequests)
+	}
+
+	if len(errors) != 0 {
+		t.Errorf("Errors received from Query.Each: %v\n", errors)
+	}
+
+	if len(users) != 150 {
+		t.Errorf("Wrong number of users received. Expected 150, got: %d\n", len(users))
+	}
+}
+
+func TestGetQueryRepr(t *testing.T) {
+	s := &struct {
+		F1 string
+		F2 int
+		F3 float32
+		F4 bool
+		F5 time.Time
+		F6 time.Time
+		F7 *User
+	}{}
+
+	cases := []struct {
+		v        interface{}
+		fname    string
+		expected interface{}
+	}{
+		{"string", "f1", "string"},
+		{73, "f2", 73}, //int
+		{14.3, "f3", 14.3},
+		{true, "f4", true},
+		{
+			time.Date(2014, 12, 19, 16, 47, 23, 120000000, time.UTC),
+			"f5",
+			Date(time.Date(2014, 12, 19, 16, 47, 23, 120000000, time.UTC)),
+		},
+		{
+			"2014-12-19T16:47:23.120Z",
+			"f6",
+			map[string]string{
+				"iso":    "2014-12-19T16:47:23.120Z",
+				"__type": "Date",
+			},
+		},
+		{
+			&User{Base{Id: "abc"}},
+			"f7",
+			Pointer{
+				ClassName: "_User",
+				Id:        "abc",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		actual := getQueryRepr(s, c.fname, c.v)
+		if !reflect.DeepEqual(actual, c.expected) {
+			t.Errorf("getQueryRepr did not return expected value. Got: [%v] expected [%v]\n", actual, c.expected)
+		}
 	}
 }

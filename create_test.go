@@ -89,8 +89,6 @@ func TestCreate(t *testing.T) {
 	})
 	defer teardownTestServer()
 
-	Initialize("app_id", "rest_key", "master_key")
-
 	u := TestUser{
 		FirstName: "Kyle",
 		LastName:  "M",
@@ -108,7 +106,7 @@ func TestCreate(t *testing.T) {
 		t.Errorf("Create did not set proper id on instance. u.Id: %v\n", u.Id)
 	}
 
-	if *u.CreatedAt != time.Date(2014, 12, 19, 18, 5, 57, 0, time.UTC) {
+	if u.CreatedAt != time.Date(2014, 12, 19, 18, 5, 57, 0, time.UTC) {
 		t.Errorf("Create did not set proper createdAt date. u.CreatedAt: %v\n", u.CreatedAt)
 	}
 }
@@ -130,8 +128,6 @@ func TestCreateUseMasterKey(t *testing.T) {
 		fmt.Fprintf(w, `{"createdAt":"2014-12-19T18:05:57Z","objectId":"abcDEF"}`)
 	})
 	defer teardownTestServer()
-
-	Initialize("app_id", "rest_key", "master_key")
 
 	u := TestUser{
 		FirstName: "Kyle",

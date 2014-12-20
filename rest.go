@@ -311,6 +311,11 @@ func populateValue(dst interface{}, src interface{}) error {
 			}
 		} else if sv.Kind() == reflect.Slice && sv.Len() == 1 {
 			return populateValue(dst, sv.Index(0).Interface())
+		} else if p, ok := src.(Pointer); ok {
+			newV := reflect.Zero(dvi.Type())
+			if f := newV.FieldByName("Id"); f.CanSet() {
+				f.Set(reflect.ValueOf(p.Id))
+			}
 		} else {
 			return fmt.Errorf("expected map, got %s", sv.Kind())
 		}

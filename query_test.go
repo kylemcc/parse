@@ -283,6 +283,10 @@ func TestQueryRequest(t *testing.T) {
 			t.Errorf("request did not have Rest Key header set!")
 		}
 
+		if h := r.Header.Get(SessionTokenHeader); h != "" {
+			t.Errorf("request had Session Token header set!")
+		}
+
 		if h := r.Header.Get(MasterKeyHeader); h != "" {
 			t.Errorf("request had Master Key header set!")
 		}
@@ -346,6 +350,10 @@ func TestQueryUseMasterKey(t *testing.T) {
 
 		if h := r.Header.Get(RestKeyHeader); h != "" {
 			t.Errorf("request had Rest Key header set!")
+		}
+
+		if h := r.Header.Get(SessionTokenHeader); h != "" {
+			t.Errorf("request had Session Token header set!")
 		}
 
 		if h := r.Header.Get(MasterKeyHeader); h != "master_key" {

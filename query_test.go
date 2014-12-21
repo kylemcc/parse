@@ -381,7 +381,7 @@ func TestFirst(t *testing.T) {
 	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		if r.Form.Get("limit") != "1" {
-			t.Errorf("limit was not 1. got [%d]\n", r.Form.Get("limit"))
+			t.Errorf("limit was not 1. got [%v]\n", r.Form.Get("limit"))
 		}
 		fmt.Fprintf(w, `{"results":[{"objectId": "123", "createdAt":"2012-04-14T19:23:10.123Z"}]}`)
 	})

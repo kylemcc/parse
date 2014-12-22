@@ -81,7 +81,6 @@ func main() {
 		- Field ops (__op):
 			- AddRelation
 			- RemoveRelation
-    - Delete
 - ACLs
 - Cloud Functions
 - Background Jobs

@@ -58,7 +58,7 @@ func TestEndpoint(t *testing.T) {
 	}
 }
 
-func TestEndpointGetUpdateDelete(t *testing.T) {
+func TestEndpointGet(t *testing.T) {
 	testCases := []struct {
 		inst     interface{}
 		id       string

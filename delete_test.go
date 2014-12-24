@@ -1,6 +1,10 @@
 package parse
 
-import "testing"
+import (
+	"fmt"
+	"net/http"
+	"testing"
+)
 
 func TestDeleteRequiresPointer(t *testing.T) {
 	u := User{}
@@ -41,4 +45,41 @@ func TestEndpointDelete(t *testing.T) {
 			t.Errorf("Wrong endpoint generated. Expected [%s] got [%s]\n", tc.expected, actual)
 		}
 	}
+}
+
+func TestDelete(t *testing.T) {
+	shouldHaveMasterKey := false
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		if h := r.Header.Get(AppIdHeader); h != "app_id" {
+			t.Errorf("request did not have App ID header set!")
+		}
+
+		if h := r.Header.Get(SessionTokenHeader); h != "" {
+			t.Errorf("request had Session Token header set!")
+		}
+
+		if shouldHaveMasterKey {
+			if h := r.Header.Get(RestKeyHeader); h != "" {
+				t.Errorf("request had Rest Key header set!")
+			}
+
+			if h := r.Header.Get(MasterKeyHeader); h != "master_key" {
+				t.Errorf("request did not have Master Key header set!")
+			}
+		} else {
+			if h := r.Header.Get(RestKeyHeader); h != "rest_key" {
+				t.Errorf("request did not have Rest Key header set!")
+			}
+
+			if h := r.Header.Get(MasterKeyHeader); h != "" {
+				t.Errorf("request had Master Key header set!")
+			}
+		}
+
+		fmt.Fprintf(w, "")
+	})
+	defer teardownTestServer()
+
+	u := User{Base{Id: "abc"}}
+	Delete(&u, false)
 }

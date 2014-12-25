@@ -51,6 +51,9 @@ type Base struct {
 // fields with no matching struct field will be stored in User.Extra (map[string]interface{})
 type User struct {
 	Base
+	Username      string
+	Email         string
+	EmailVerified bool
 }
 
 func (u *User) ClassName() string {

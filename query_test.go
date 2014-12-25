@@ -116,7 +116,7 @@ func TestFilters(t *testing.T) {
 	q.EqualTo("f2", 1)
 	q.EqualTo("f3", time.Date(2014, 1, 14, 13, 37, 6, 120000000, time.UTC))
 	q.EqualTo("f4", "abcdefg")
-	q.EqualTo("f5", User{Base{Id: "qrstuv"}})
+	q.EqualTo("f5", User{Base: Base{Id: "qrstuv"}})
 	q.NotEqualTo("f6", 7)
 	q.GreaterThan("f7", 3.2)
 	q.GreaterThanOrEqual("f8", "abc")
@@ -616,7 +616,7 @@ func TestGetQueryRepr(t *testing.T) {
 			},
 		},
 		{
-			&User{Base{Id: "abc"}},
+			&User{Base: Base{Id: "abc"}},
 			"f7",
 			Pointer{
 				ClassName: "_User",

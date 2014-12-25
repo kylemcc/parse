@@ -45,7 +45,7 @@ func TestOperations(t *testing.T) {
 	u.Set("f1", "string")
 	u.Set("f2", "2014-12-20T18:31:19.123Z")
 	u.Set("f3", time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC))
-	u.Set("f4", User{Base{Id: "abcd"}})
+	u.Set("f4", User{Base: Base{Id: "abcd"}})
 	u.Set("f5", "efghi")
 	u.Set("f6_custom", true)
 	u.Increment("f7", 1)
@@ -180,7 +180,7 @@ func TestExecuteUpdatesStruct(t *testing.T) {
 	u.Set("f1", "string")
 	u.Set("f2", "2014-12-20T18:31:19.123Z")
 	u.Set("f3", time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC))
-	u.Set("f4", User{Base{Id: "abcd"}})
+	u.Set("f4", User{Base: Base{Id: "abcd"}})
 	u.Set("f5", "efghi")
 	u.Set("f6_custom", true)
 	u.Increment("f7", 1)
@@ -200,8 +200,8 @@ func TestExecuteUpdatesStruct(t *testing.T) {
 		F1:        "string",
 		F2:        time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC),
 		F3:        time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC),
-		F4:        User{Base{Id: "abcd"}},
-		F5:        User{Base{Id: "efghi"}},
+		F4:        User{Base: Base{Id: "abcd"}},
+		F5:        User{Base: Base{Id: "efghi"}},
 		F6:        true,
 		F7:        11,
 		F8:        75,

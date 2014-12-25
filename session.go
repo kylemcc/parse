@@ -74,7 +74,7 @@ func (s *loginRequestT) method() string {
 func (s *loginRequestT) endpoint() (string, error) {
 	u := url.URL{}
 	u.Scheme = "https"
-	u.Host = "api.parse.com"
+	u.Host = parseHost
 	u.Path = "/1/login"
 
 	v := url.Values{}

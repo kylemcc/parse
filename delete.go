@@ -10,7 +10,11 @@ import (
 // Delete the instance of the type represented by v from the Parse database. If
 // useMasteKey=true, the Master Key will be used for the deletion request.
 func Delete(v interface{}, useMasterKey bool) error {
-	return defaultClient.doRequest(&deleteT{inst: v, shouldUseMasterKey: useMasterKey}, v)
+	return _delete(v, useMasterKey, nil)
+}
+
+func _delete(v interface{}, useMasterKey bool, currentSession *sessionT) error {
+	return defaultClient.doRequest(&deleteT{inst: v, shouldUseMasterKey: useMasterKey, currentSession: currentSession}, v)
 }
 
 type deleteT struct {

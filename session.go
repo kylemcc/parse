@@ -7,6 +7,7 @@ type Session interface {
 	NewQuery(v interface{}) (Query, error)
 	NewUpdate(v interface{}) (Update, error)
 	Create(v interface{}) error
+	Delete(v interface{}) error
 }
 
 type loginRequestT struct {
@@ -60,6 +61,10 @@ func (s *sessionT) NewUpdate(v interface{}) (Update, error) {
 
 func (s *sessionT) Create(v interface{}) error {
 	return create(v, false, s)
+}
+
+func (s *sessionT) Delete(v interface{}) error {
+	return _delete(v, false, s)
 }
 
 func (s *loginRequestT) method() string {

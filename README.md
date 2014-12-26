@@ -74,7 +74,6 @@ func main() {
 
 ###TODO
 - Missing query operations
-    - Regex match
     - Match key in subquery
 - Missing CRUD operations:
     - Update

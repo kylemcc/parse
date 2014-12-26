@@ -104,6 +104,10 @@ type Query interface {
 	// the substring specified by v
 	EndsWith(f string, v string) Query
 
+	// Add a constraint requiring the string field specified by f match the
+	// regular expression v
+	Matches(f string, v string, ignoreCase bool, multiLine bool) Query
+
 	// Add a constraint requiring the location of GeoPoint field specified by f be
 	// within the rectangular geographic bounding box with a southwest corner
 	// represented by sw and a northeast corner represented by ne
@@ -477,6 +481,38 @@ func (q *queryT) EndsWith(f string, v string) Query {
 	q.where[f] = map[string]interface{}{
 		"$regex": v,
 	}
+	return q
+}
+
+func (q *queryT) Matches(f string, v string, ignoreCase bool, multiLine bool) Query {
+	v = quote(v)
+	if cv, ok := q.where[f]; ok {
+		if m, ok := cv.(map[string]interface{}); ok {
+			m["$regex"] = v
+			return q
+		}
+	}
+
+	q.where[f] = map[string]interface{}{
+		"$regex": v,
+	}
+
+	var options string
+
+	if ignoreCase {
+		options += "i"
+	}
+
+	if multiLine {
+		options += "m"
+	}
+
+	if len(options) > 0 {
+		if m, ok := q.where[f].(map[string]interface{}); ok {
+			m["$options"] = options
+		}
+	}
+
 	return q
 }
 

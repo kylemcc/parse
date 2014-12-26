@@ -44,7 +44,7 @@ func main() {
     fmt.Printf("Retrieved user with id: %s\n", u.Id)
 
 	q2, _ := parse.NewQuery(&parse.User{})
-	q2.GreaterThan("createdAt", time.Date(2014, 01, 01))
+	q2.GreaterThan("createdAt", time.Date(2014, 01, 01, 0, 0, 0, 0, time.UTC))
 	rc := make(chan *parse.User)
 	ec := make(chan error)
 

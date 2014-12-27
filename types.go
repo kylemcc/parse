@@ -181,6 +181,15 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func getClassName(v interface{}) string {
+	if tmp, ok := v.(iClassName); ok {
+		return tmp.ClassName()
+	} else {
+		t := reflect.TypeOf(v)
+		return t.Elem().Name()
+	}
+}
+
 func getEndpointBase(v interface{}) string {
 	var p string
 	var inst interface{}
@@ -203,13 +212,7 @@ func getEndpointBase(v interface{}) string {
 	if iv, ok := inst.(iParseEp); ok {
 		p = iv.Endpoint()
 	} else {
-		var cname string
-		if v, ok := inst.(iClassName); ok {
-			cname = v.ClassName()
-		} else {
-			t := reflect.TypeOf(inst)
-			cname = t.Elem().Name()
-		}
+		cname := getClassName(v)
 		p = path.Join("classes", cname)
 	}
 

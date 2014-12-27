@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -136,6 +137,12 @@ func TestFilters(t *testing.T) {
 	q.WithinKilometers("f22", GeoPoint{41.894303, -87.676835}, 7.8)
 	q.WithinRadians("f23", GeoPoint{41.894303, -87.676835}, 0.8910)
 
+	q.Limit(10)
+	q.Skip(20)
+	q.OrderBy("-createdAt")
+	q.Include("location")
+	q.Keys("email")
+
 	em := map[string]interface{}{
 		"f1": "test",
 		"f2": 1,
@@ -260,6 +267,30 @@ func TestFilters(t *testing.T) {
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("where different from expected. expected:\n%s\n\ngot:\n%s\n", eb, b)
+	}
+
+	p, _ := q.(*queryT).payload()
+	qs, err := url.ParseQuery(p)
+	if err != nil {
+		t.Errorf("unexpected error parsing query string: %v\n", err)
+		t.FailNow()
+	}
+
+	cases := []struct {
+		key      string
+		expected string
+	}{
+		{"limit", "10"},
+		{"skip", "20"},
+		{"order", "-createdAt"},
+		{"include", "location"},
+		{"keys", "email"},
+	}
+
+	for _, c := range cases {
+		if v := qs.Get(c.key); v != c.expected {
+			t.Errorf("query value for key [%s] did not match. Got [%v] expected [%v]\n", c.key, v, c.expected)
+		}
 	}
 }
 

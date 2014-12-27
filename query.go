@@ -45,7 +45,7 @@ type Query interface {
 	// Specify nested fields to retrieve within the primary object. Use
 	// dot notation to retrieve further nested fields. E.g.:
 	// q.Include("user") or q.Include("user.location")
-	Include(f string) Query
+	Include(fs ...string) Query
 
 	// Only retrieve the specified fields
 	Keys(fs ...string) Query
@@ -113,21 +113,21 @@ type Query interface {
 	// represented by sw and a northeast corner represented by ne
 	WithinGeoBox(f string, sw GeoPoint, ne GeoPoint) Query
 
-	// Add a constraint require the location of GeoPoint field specified by f
+	// Add a constraint requiring the location of GeoPoint field specified by f
 	// be near the point represented by g
 	Near(f string, g GeoPoint) Query
 
-	// Add a constraint require the location of GeoPoint field specified by f
+	// Add a constraint requiring the location of GeoPoint field specified by f
 	// be near the point represented by g with a maximum distance in miles
 	// represented by m
 	WithinMiles(f string, g GeoPoint, m float64) Query
 
-	// Add a constraint require the location of GeoPoint field specified by f
+	// Add a constraint requiring the location of GeoPoint field specified by f
 	// be near the point represented by g with a maximum distance in kilometers
 	// represented by m
 	WithinKilometers(f string, g GeoPoint, k float64) Query
 
-	// Add a constraint require the location of GeoPoint field specified by f
+	// Add a constraint requiring the location of GeoPoint field specified by f
 	// be near the point represented by g with a maximum distance in radians
 	// represented by m
 	WithinRadians(f string, g GeoPoint, r float64) Query
@@ -244,14 +244,16 @@ func (q *queryT) Skip(s int) Query {
 	return q
 }
 
-func (q *queryT) Include(f string) Query {
-	q.include[f] = struct{}{}
+func (q *queryT) Include(fs ...string) Query {
+	for _, f := range fs {
+		q.include[f] = struct{}{}
+	}
 	return q
 }
 
 func (q *queryT) Keys(fs ...string) Query {
 	for _, f := range fs {
-		q.include[f] = struct{}{}
+		q.keys[f] = struct{}{}
 	}
 	return q
 }
@@ -680,7 +682,7 @@ func (q *queryT) payload() (string, error) {
 	}
 
 	if len(q.include) > 0 {
-		is := make([]string, len(q.include))
+		is := make([]string, 0, len(q.include))
 		for k := range q.include {
 			is = append(is, k)
 		}
@@ -689,12 +691,12 @@ func (q *queryT) payload() (string, error) {
 	}
 
 	if len(q.keys) > 0 {
-		ks := make([]string, len(q.include))
+		ks := make([]string, 0, len(q.include))
 		for k := range q.keys {
 			ks = append(ks, k)
 		}
 		k := strings.Join(ks, ",")
-		p["include"] = []string{k}
+		p["keys"] = []string{k}
 	}
 
 	return p.Encode(), nil

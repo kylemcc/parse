@@ -74,7 +74,9 @@ func main() {
 
 ###TODO
 - Missing query operations
-    - Match key in subquery
+    - Match key in subquery ($select)
+	- Match query ($inQuery)
+	- Related to
 - Missing CRUD operations:
     - Update
 		- Field ops (__op):

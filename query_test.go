@@ -137,6 +137,10 @@ func TestFilters(t *testing.T) {
 	q.WithinKilometers("f22", GeoPoint{41.894303, -87.676835}, 7.8)
 	q.WithinRadians("f23", GeoPoint{41.894303, -87.676835}, 0.8910)
 
+	subq, _ := NewQuery(&User{})
+	subq.EqualTo("email", "kylemcc@gmail.com")
+	q.MatchesKeyInQuery("f24", "testKey", subq)
+
 	q.Limit(10)
 	q.Skip(20)
 	q.OrderBy("-createdAt")
@@ -245,6 +249,17 @@ func TestFilters(t *testing.T) {
 				"longitude": -87.676835,
 			},
 			"$maxDistanceInRadians": 0.8910,
+		},
+		"f24": map[string]interface{}{
+			"$select": map[string]interface{}{
+				"key": "testKey",
+				"query": map[string]interface{}{
+					"className": "_User",
+					"where": map[string]interface{}{
+						"email": "kylemcc@gmail.com",
+					},
+				},
+			},
 		},
 	}
 

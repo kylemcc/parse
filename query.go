@@ -132,6 +132,10 @@ type Query interface {
 	// represented by m
 	WithinRadians(f string, g GeoPoint, r float64) Query
 
+	// Add a constraint requiring the value of the field specified by f be equal
+	// to the field named qk in the result of the subquery sq
+	MatchesKeyInQuery(f string, qk string, sq Query) Query
+
 	// Constructs a query where each result must satisfy one of the given
 	// subueries
 	//
@@ -188,14 +192,15 @@ type queryT struct {
 	inst interface{}
 	op   opTypeT
 
-	instId  *string
-	orderBy []string
-	limit   *int
-	skip    *int
-	count   *int
-	where   map[string]interface{}
-	include map[string]struct{}
-	keys    map[string]struct{}
+	instId    *string
+	orderBy   []string
+	limit     *int
+	skip      *int
+	count     *int
+	where     map[string]interface{}
+	include   map[string]struct{}
+	keys      map[string]struct{}
+	className string
 
 	currentSession *sessionT
 
@@ -210,11 +215,12 @@ func NewQuery(v interface{}) (Query, error) {
 	}
 
 	return &queryT{
-		inst:    v,
-		orderBy: make([]string, 0),
-		where:   make(map[string]interface{}),
-		include: make(map[string]struct{}),
-		keys:    make(map[string]struct{}),
+		inst:      v,
+		orderBy:   make([]string, 0),
+		where:     make(map[string]interface{}),
+		include:   make(map[string]struct{}),
+		keys:      make(map[string]struct{}),
+		className: getClassName(v),
 	}, nil
 }
 
@@ -558,6 +564,21 @@ func (q *queryT) WithinRadians(f string, g GeoPoint, r float64) Query {
 	return q
 }
 
+func (q *queryT) MatchesKeyInQuery(f, qk string, sq Query) Query {
+	var sqt *queryT
+	if tmp, ok := sq.(*queryT); ok {
+		sqt = tmp
+	}
+
+	q.where[f] = map[string]interface{}{
+		"$select": map[string]interface{}{
+			"key":   qk,
+			"query": sqt,
+		},
+	}
+	return q
+}
+
 func (q *queryT) Or(qs ...Query) Query {
 	or := make([]map[string]interface{}, 0, len(qs))
 	for _, qi := range qs {
@@ -743,6 +764,40 @@ func (q *queryT) session() *sessionT {
 
 func (q *queryT) contentType() string {
 	return "application/x-www-form-urlencoded"
+}
+
+func (q *queryT) MarshalJSON() ([]byte, error) {
+	m := map[string]interface{}{}
+
+	if len(q.where) > 0 {
+		m["where"] = q.where
+	}
+
+	if q.className != "" {
+		m["className"] = q.className
+	}
+
+	if q.limit != nil {
+		m["limit"] = q.limit
+	}
+
+	if q.skip != nil {
+		m["skip"] = q.skip
+	}
+
+	if len(q.orderBy) > 0 {
+		m["skip"] = q.orderBy
+	}
+
+	if len(q.include) > 0 {
+		m["include"] = q.include
+	}
+
+	if len(q.keys) > 0 {
+		m["keys"] = q.keys
+	}
+
+	return json.Marshal(m)
 }
 
 // From the Javascript library - convert the string represented by re into a regex

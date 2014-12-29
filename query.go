@@ -136,6 +136,10 @@ type Query interface {
 	// to the field named qk in the result of the subquery sq
 	MatchesKeyInQuery(f string, qk string, sq Query) Query
 
+	// Add a constraint requiring the value of the field specified by f not match
+	// the field named qk in the result of the subquery sq
+	DoesNotMatchKeyInQuery(f string, qk string, sq Query) Query
+
 	// Constructs a query where each result must satisfy one of the given
 	// subueries
 	//
@@ -572,6 +576,21 @@ func (q *queryT) MatchesKeyInQuery(f, qk string, sq Query) Query {
 
 	q.where[f] = map[string]interface{}{
 		"$select": map[string]interface{}{
+			"key":   qk,
+			"query": sqt,
+		},
+	}
+	return q
+}
+
+func (q *queryT) DoesNotMatchKeyInQuery(f string, qk string, sq Query) Query {
+	var sqt *queryT
+	if tmp, ok := sq.(*queryT); ok {
+		sqt = tmp
+	}
+
+	q.where[f] = map[string]interface{}{
+		"$dontSelect": map[string]interface{}{
 			"key":   qk,
 			"query": sqt,
 		},

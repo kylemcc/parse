@@ -141,6 +141,10 @@ func TestFilters(t *testing.T) {
 	subq.EqualTo("email", "kylemcc@gmail.com")
 	q.MatchesKeyInQuery("f24", "testKey", subq)
 
+	subq2, _ := NewQuery(&User{})
+	subq2.EqualTo("city", "Chicago")
+	q.DoesNotMatchKeyInQuery("f25", "testKey2", subq2)
+
 	q.Limit(10)
 	q.Skip(20)
 	q.OrderBy("-createdAt")
@@ -257,6 +261,17 @@ func TestFilters(t *testing.T) {
 					"className": "_User",
 					"where": map[string]interface{}{
 						"email": "kylemcc@gmail.com",
+					},
+				},
+			},
+		},
+		"f25": map[string]interface{}{
+			"$dontSelect": map[string]interface{}{
+				"key": "testKey2",
+				"query": map[string]interface{}{
+					"className": "_User",
+					"where": map[string]interface{}{
+						"city": "Chicago",
 					},
 				},
 			},

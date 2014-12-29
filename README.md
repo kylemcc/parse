@@ -74,7 +74,6 @@ func main() {
 
 ###TODO
 - Missing query operations
-	- Match query ($inQuery)
 	- Related to
 - Missing CRUD operations:
     - Update

@@ -140,6 +140,14 @@ type Query interface {
 	// the field named qk in the result of the subquery sq
 	DoesNotMatchKeyInQuery(f string, qk string, sq Query) Query
 
+	// Add a constraint requiring the field specified by f contain the object
+	// returned by Parse query q
+	MatchesQuery(f string, q Query) Query
+
+	// Add a constraint requiring the field specified by f not contain the object
+	// returned by the Parse query q
+	DoesNotMatchQuery(f string, q Query) Query
+
 	// Constructs a query where each result must satisfy one of the given
 	// subueries
 	//
@@ -594,6 +602,20 @@ func (q *queryT) DoesNotMatchKeyInQuery(f string, qk string, sq Query) Query {
 			"key":   qk,
 			"query": sqt,
 		},
+	}
+	return q
+}
+
+func (q *queryT) MatchesQuery(f string, sq Query) Query {
+	q.where[f] = map[string]interface{}{
+		"$inQuery": sq,
+	}
+	return q
+}
+
+func (q *queryT) DoesNotMatchQuery(f string, sq Query) Query {
+	q.where[f] = map[string]interface{}{
+		"$notInQuery": sq,
 	}
 	return q
 }

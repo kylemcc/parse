@@ -81,6 +81,7 @@ func main() {
 			- AddRelation
 			- RemoveRelation
 - ACLs
+- Roles
 - Cloud Functions
 - Background Jobs
 - Push Notifications

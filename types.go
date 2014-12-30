@@ -39,10 +39,10 @@ type iParseEp interface {
 // Embed this struct in custom types to avoid having to declare
 // these fields everywhere.
 type Base struct {
-	Id        string    `parse:"objectId"`
-	CreatedAt time.Time `parse:"-"`
-	UpdatedAt time.Time `parse:"-"`
-	ACL       *ACL
+	Id        string                 `parse:"objectId"`
+	CreatedAt time.Time              `parse:"-"`
+	UpdatedAt time.Time              `parse:"-"`
+	ACL       ACL                    `parse:"ACL"`
 	Extra     map[string]interface{} `parse:"-"`
 }
 
@@ -79,7 +79,178 @@ func (i *Installation) Endpoint() string {
 	return "installations"
 }
 
-type ACL struct {
+type ACL interface {
+	PublicReadAccess() bool
+	PublicWriteAccess() bool
+	RoleReadAccess(role string) bool
+	RoleWriteAccess(role string) bool
+	ReadAccess(userId string) bool
+	WriteAccess(userId string) bool
+
+	SetPublicReadAccess(allowed bool) ACL
+	SetPublicWriteAccess(allowed bool) ACL
+	SetRoleReadAccess(role string, allowed bool) ACL
+	SetRoleWriteAccess(role string, allowed bool) ACL
+	SetReadAccess(userId string, allowed bool) ACL
+	SetWriteAccess(userId string, allowed bool) ACL
+}
+
+type aclT struct {
+	publicReadAccess  bool
+	publicWriteAccess bool
+
+	write map[string]bool
+	read  map[string]bool
+}
+
+func NewACL() ACL {
+	return &aclT{
+		write: map[string]bool{},
+		read:  map[string]bool{},
+	}
+}
+
+func (a *aclT) PublicReadAccess() bool {
+	return a.publicReadAccess
+}
+
+func (a *aclT) PublicWriteAccess() bool {
+	return a.publicWriteAccess
+}
+
+func (a *aclT) RoleReadAccess(role string) bool {
+	if tmp, ok := a.read["role:"+role]; ok {
+		return tmp
+	}
+	return false
+}
+
+func (a *aclT) RoleWriteAccess(role string) bool {
+	if tmp, ok := a.write["role:"+role]; ok {
+		return tmp
+	}
+	return false
+}
+
+func (a *aclT) ReadAccess(userId string) bool {
+	if tmp, ok := a.read[userId]; ok {
+		return tmp
+	}
+	return false
+}
+
+func (a *aclT) WriteAccess(userId string) bool {
+	if tmp, ok := a.write[userId]; ok {
+		return tmp
+	}
+	return false
+}
+
+func (a *aclT) SetPublicReadAccess(allowed bool) ACL {
+	a.publicReadAccess = allowed
+	return a
+}
+
+func (a *aclT) SetPublicWriteAccess(allowed bool) ACL {
+	a.publicWriteAccess = allowed
+	return a
+}
+
+func (a *aclT) SetReadAccess(userId string, allowed bool) ACL {
+	a.read[userId] = allowed
+	return a
+}
+
+func (a *aclT) SetWriteAccess(userId string, allowed bool) ACL {
+	a.write[userId] = allowed
+	return a
+}
+
+func (a *aclT) SetRoleReadAccess(role string, allowed bool) ACL {
+	a.read["role:"+role] = allowed
+	return a
+}
+
+func (a *aclT) SetRoleWriteAccess(role string, allowed bool) ACL {
+	a.write["role:"+role] = allowed
+	return a
+}
+
+func (a *aclT) MarshalJSON() ([]byte, error) {
+	m := map[string]map[string]bool{}
+
+	for k, v := range a.read {
+		if v {
+			m[k] = map[string]bool{
+				"read": v,
+			}
+		}
+	}
+
+	for k, v := range a.write {
+		if v {
+			if p, ok := m[k]; ok {
+				p["write"] = v
+			} else {
+				m[k] = map[string]bool{
+					"write": v,
+				}
+			}
+		}
+	}
+
+	if a.publicReadAccess {
+		m["*"] = map[string]bool{
+			"read": true,
+		}
+	}
+
+	if a.publicWriteAccess {
+		if p, ok := m["*"]; !ok {
+			m["*"] = map[string]bool{
+				"write": true,
+			}
+		} else {
+			p["write"] = true
+		}
+	}
+
+	return json.Marshal(m)
+}
+
+func (a *aclT) UnmarshalJSON(b []byte) error {
+	m := map[string]map[string]bool{}
+
+	if err := json.Unmarshal(b, m); err != nil {
+		return err
+	}
+
+	if a.read == nil {
+		a.read = map[string]bool{}
+	}
+
+	if a.write == nil {
+		a.write = map[string]bool{}
+	}
+
+	for k, v := range m {
+		if k == "*" {
+			if w, ok := v["write"]; w && ok {
+				a.publicWriteAccess = true
+			}
+			if r, ok := v["read"]; r && ok {
+				a.publicReadAccess = true
+			}
+		} else {
+			if w, ok := v["write"]; w && ok {
+				a.write[k] = true
+			}
+			if r, ok := v["read"]; r && ok {
+				a.read[k] = true
+			}
+		}
+	}
+	return nil
 }
 
 // Represents the Parse GeoPoint type

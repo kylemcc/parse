@@ -48,6 +48,9 @@ func (c *createT) body() (string, error) {
 		}
 
 		if fv := rvi.FieldByName(f.Name); fv.IsValid() {
+			if fname == "ACL" && fv.IsNil() {
+				continue
+			}
 			payload[fname] = fv.Interface()
 		}
 	}

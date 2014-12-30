@@ -69,3 +69,55 @@ func TestACLMarshal(t *testing.T) {
 		t.Errorf("ACL did not marshal correct.\nGot:\n%v\nExpected:\n%v\n", actual, expected)
 	}
 }
+
+func TestACLUnmarshal(t *testing.T) {
+	b := `{"*":{"read":true},"abc":{"read":true},"def":{"read":true,"write":true},"role:xyz":{"read":true},"role:qrs":{"write":true,"read":true}}`
+
+	acl := NewACL()
+	if err := json.Unmarshal([]byte(b), &acl); err != nil {
+		t.Errorf("unexpected error unmarshaling acl: %v\n", err)
+		t.FailNow()
+	}
+
+	if !acl.PublicReadAccess() {
+		t.Errorf("ACL does not have public read = true!")
+	}
+
+	if acl.PublicWriteAccess() {
+		t.Errorf("ACL does has public write = true!")
+	}
+
+	cases := []struct {
+		key           string
+		isRole        bool
+		expectedRead  bool
+		expectedWrite bool
+	}{
+		{"abc", false, true, false},
+		{"def", false, true, true},
+		{"xyz", true, true, false},
+		{"qrs", true, true, true},
+		{"ghi", false, false, false},
+		{"123", false, false, false},
+		{"aaa", true, false, false},
+		{"bbb", true, false, false},
+	}
+
+	for _, c := range cases {
+		if c.isRole {
+			if acl.RoleReadAccess(c.key) != c.expectedRead {
+				t.Errorf("acl did not unmarshal correctly. Expected read=%v for role [%v], got %v\n", c.expectedRead, c.key, !c.expectedRead)
+			}
+			if acl.RoleWriteAccess(c.key) != c.expectedWrite {
+				t.Errorf("acl did not unmarshal correctly. Expected write=%v for role [%v], got %v\n", c.expectedWrite, c.key, !c.expectedWrite)
+			}
+		} else {
+			if acl.ReadAccess(c.key) != c.expectedRead {
+				t.Errorf("acl did not unmarshal correctly. Expected read=%v for id [%v], got %v\n", c.expectedRead, c.key, !c.expectedRead)
+			}
+			if acl.WriteAccess(c.key) != c.expectedWrite {
+				t.Errorf("acl did not unmarshal correctly. Expected write=%v for id [%v], got %v\n", c.expectedWrite, c.key, !c.expectedWrite)
+			}
+		}
+	}
+}

@@ -221,7 +221,7 @@ func (a *aclT) MarshalJSON() ([]byte, error) {
 func (a *aclT) UnmarshalJSON(b []byte) error {
 	m := map[string]map[string]bool{}
 
-	if err := json.Unmarshal(b, m); err != nil {
+	if err := json.Unmarshal(b, &m); err != nil {
 		return err
 	}
 

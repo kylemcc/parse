@@ -3,6 +3,9 @@ package parse
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"path"
 	"reflect"
 	"time"
@@ -389,4 +392,41 @@ func getEndpointBase(v interface{}) string {
 
 	p = path.Join(ParseVersion, p)
 	return p
+}
+
+type Config map[string]interface{}
+
+func GetConfig() (Config, error) {
+	u := url.URL{}
+	u.Scheme = "https"
+	u.Host = parseHost
+	u.Path = path.Join(ParseVersion, "config")
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add(AppIdHeader, defaultClient.appId)
+	req.Header.Add(RestKeyHeader, defaultClient.restKey)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	c := struct {
+		Params Config `json:"params"`
+	}{}
+	if err := json.Unmarshal(body, &c); err != nil {
+		return nil, err
+	}
+
+	return c.Params, nil
 }

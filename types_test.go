@@ -2,6 +2,8 @@ package parse
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 )
@@ -119,5 +121,32 @@ func TestACLUnmarshal(t *testing.T) {
 				t.Errorf("acl did not unmarshal correctly. Expected write=%v for id [%v], got %v\n", c.expectedWrite, c.key, !c.expectedWrite)
 			}
 		}
+	}
+}
+
+func TestConfig(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"params":{"bool":true,"string":"blah blah blah","number":123.4,"object":{"a":false,"b":73}}}`)
+	})
+	defer teardownTestServer()
+
+	c, err := GetConfig()
+	if err != nil {
+		t.Errorf("unexpected error on GetConfig: %v\n", err)
+		t.FailNow()
+	}
+
+	expectedConf := Config{
+		"bool":   true,
+		"string": "blah blah blah",
+		"number": 123.4,
+		"object": map[string]interface{}{
+			"a": false,
+			"b": 73.0,
+		},
+	}
+
+	if !reflect.DeepEqual(c, expectedConf) {
+		t.Errorf("config was different from expected.\nGot:\n%v\nExpected:\n%v\n", c, expectedConf)
 	}
 }

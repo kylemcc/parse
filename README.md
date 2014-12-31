@@ -84,6 +84,5 @@ func main() {
 - Cloud Functions
 - Background Jobs
 - Push Notifications
-- Config
 - Analytics
 - File upload/retrieval

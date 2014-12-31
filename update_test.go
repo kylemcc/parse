@@ -56,6 +56,13 @@ func TestOperations(t *testing.T) {
 	u.AddUnique("f12", "123", "456")
 	u.Remove("f13", "zyx", "wvu")
 
+	acl := NewACL()
+	acl.SetPublicReadAccess(true)
+	acl.SetWriteAccess("abc", true)
+	acl.SetRoleWriteAccess("xyz", true)
+
+	u.SetACL(acl)
+
 	em := map[string]interface{}{
 		"f1": "string",
 		"f2": map[string]interface{}{
@@ -108,6 +115,17 @@ func TestOperations(t *testing.T) {
 			"__op": "Remove",
 			"objects": []interface{}{
 				"zyx", "wvu",
+			},
+		},
+		"ACL": map[string]map[string]bool{
+			"*": {
+				"read": true,
+			},
+			"abc": {
+				"write": true,
+			},
+			"role:xyz": {
+				"write": true,
 			},
 		},
 	}

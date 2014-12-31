@@ -100,6 +100,9 @@ type Update interface {
 	// Remove the provided values from the array field specified by f
 	Remove(f string, vs ...interface{}) Update
 
+	// Update the ACL on the given object
+	SetACL(a ACL) Update
+
 	// Use the Master Key for this update request
 	UseMasterKey() Update
 
@@ -158,6 +161,11 @@ func (u *updateT) AddUnique(f string, vs ...interface{}) Update {
 
 func (u *updateT) Remove(f string, vs ...interface{}) Update {
 	u.values[f] = updateOpT{UpdateType: opRemove, Value: vs}
+	return u
+}
+
+func (u *updateT) SetACL(a ACL) Update {
+	u.values["ACL"] = updateOpT{UpdateType: opSet, Value: a}
 	return u
 }
 

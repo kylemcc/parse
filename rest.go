@@ -110,7 +110,7 @@ func (c *Client) doRequest(op requestT, dst interface{}) error {
 	return handleResponse(resp, op, dst)
 }
 
-func getFields(t reflect.Type) []reflect.StructField {
+func getFields(t reflect.Type, recurse bool) []reflect.StructField {
 	fields := make([]reflect.StructField, 0)
 
 	if t.Kind() == reflect.Ptr {
@@ -125,7 +125,11 @@ func getFields(t reflect.Type) []reflect.StructField {
 		}
 		switch ft.Kind() {
 		case reflect.Struct:
-			fields = append(fields, getFields(ft)...)
+			if recurse {
+				fields = append(fields, getFields(ft, recurse)...)
+			} else {
+				fields = append(fields, f)
+			}
 		default:
 			fields = append(fields, f)
 		}
@@ -149,7 +153,7 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 		return f
 	}
 
-	fields := getFields(t)
+	fields := getFields(t, true)
 
 	fieldMap := make(map[string]string)
 	for _, f := range fields {

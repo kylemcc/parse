@@ -33,11 +33,11 @@ func (c *createT) body() (string, error) {
 	rv := reflect.ValueOf(c.v)
 	rvi := reflect.Indirect(rv)
 	rt := rvi.Type()
-	fields := getFields(rt)
+	fields := getFields(rt, false)
 
 	for _, f := range fields {
 		var t string
-		if t = f.Tag.Get("parse"); t == "-" || t == "objectId" || f.Name == "Id" {
+		if t = f.Tag.Get("parse"); t == "-" || t == "objectId" || f.Name == "Id" || f.Type == reflect.TypeOf(Base{}) {
 			continue
 		}
 		var fname string
@@ -51,7 +51,7 @@ func (c *createT) body() (string, error) {
 			if fname == "ACL" && fv.IsNil() {
 				continue
 			}
-			payload[fname] = fv.Interface()
+			payload[fname] = getQueryRepr(c.v, f.Name, fv.Interface())
 		}
 	}
 

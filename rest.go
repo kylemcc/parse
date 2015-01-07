@@ -128,10 +128,14 @@ func getFields(t reflect.Type, recurse bool) []reflect.StructField {
 			if recurse {
 				fields = append(fields, getFields(ft, recurse)...)
 			} else {
-				fields = append(fields, f)
+				if len(f.PkgPath) == 0 {
+					fields = append(fields, f)
+				}
 			}
 		default:
-			fields = append(fields, f)
+			if len(f.PkgPath) == 0 {
+				fields = append(fields, f)
+			}
 		}
 	}
 
@@ -193,6 +197,10 @@ func handleResponse(resp *http.Response, op requestT, dst interface{}) error {
 	if c, ok := data["count"]; ok {
 		return populateValue(dst, c)
 	} else if r, ok := data["results"]; ok {
+		if rl, ok := r.([]interface{}); ok && len(rl) == 0 {
+			return ErrNoRows
+		}
+
 		// Handle query results
 		return populateValue(dst, r)
 	} else {
@@ -236,7 +244,6 @@ func populateValue(dst interface{}, src interface{}) error {
 		}
 	case reflect.Struct: // TODO: Handle other Parse object types ?
 		if dvi.Type() == reflect.TypeOf(time.Time{}) || dvi.Type() == reflect.TypeOf(Date{}) {
-			// TODO: handle Parse "Date" type
 			if s, ok := src.(string); ok {
 				if t, err := parseTime(s); err != nil {
 					return err
@@ -266,7 +273,7 @@ func populateValue(dst interface{}, src interface{}) error {
 			} else {
 				return fmt.Errorf("expected string or Date type, got %s", sv.Type())
 			}
-		} else if sv.Kind() == reflect.Map {
+		} else if svi.Kind() == reflect.Map {
 			fieldNameMap := getFieldNameMap(dvi)
 			if m, ok := src.(map[string]interface{}); ok {
 				if f := dvi.FieldByName("Extra"); f.IsValid() && f.CanSet() && f.IsNil() {
@@ -311,8 +318,6 @@ func populateValue(dst interface{}, src interface{}) error {
 			} else {
 				return fmt.Errorf("expected map[string]interface{} got %s", sv.Type())
 			}
-		} else if sv.Kind() == reflect.Slice && sv.Len() == 1 {
-			return populateValue(dst, sv.Index(0).Interface())
 		} else if svi.Type().AssignableTo(dvi.Type()) {
 			dvi.Set(svi)
 		} else if p, ok := src.(Pointer); ok {
@@ -323,7 +328,7 @@ func populateValue(dst interface{}, src interface{}) error {
 			}
 			return populateValue(dst, newv.Interface())
 		} else {
-			return fmt.Errorf("expected map, got %s", sv.Kind())
+			return fmt.Errorf("expected map, got %s", svi.Kind())
 		}
 	default:
 		if dvi.Kind() == reflect.Ptr {

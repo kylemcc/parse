@@ -20,6 +20,9 @@ const (
 	otQuery
 )
 
+// Returned when a query returns no results
+var ErrNoRows = errors.New("no results returned")
+
 type Query interface {
 
 	// Use the Master Key for the given request.
@@ -665,7 +668,7 @@ func (q *queryT) Each(rc interface{}, ec chan<- error) error {
 			s.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rt.Elem()), 0, 100))
 
 			err := defaultClient.doRequest(q, s.Interface())
-			if err != nil {
+			if err != nil && err != ErrNoRows {
 				ec <- err
 			}
 
@@ -702,7 +705,30 @@ func (q *queryT) First() error {
 	q.op = otQuery
 	l := 1
 	q.limit = &l
-	return defaultClient.doRequest(q, q.inst)
+
+	rv := reflect.ValueOf(q.inst)
+	rvi := reflect.Indirect(rv)
+
+	if rvi.Kind() == reflect.Struct {
+		dv := reflect.New(reflect.SliceOf(rvi.Type()))
+		dv.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rvi.Type()), 0, 1))
+
+		if err := defaultClient.doRequest(q, dv.Interface()); err != nil {
+			return err
+		}
+
+		dvi := reflect.Indirect(dv)
+		if dvi.Len() > 0 {
+			rv.Elem().Set(dv.Elem().Index(0))
+		}
+	} else if rvi.Kind() == reflect.Slice {
+		if err := defaultClient.doRequest(q, q.inst); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("expected struct or slice, got %s", rvi.Kind())
+	}
+	return nil
 }
 
 func (q *queryT) Count() (int64, error) {

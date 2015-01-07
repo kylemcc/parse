@@ -52,6 +52,12 @@ func TestLogin(t *testing.T) {
 }
 
 func TestSessionOperationsSetSessionTokenHeader(t *testing.T) {
+	opCreate := 1
+	opDelete := 2
+	opUpdate := 3
+	opQuery := 4
+
+	var currentOp int
 	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
 		if h := r.Header.Get(AppIdHeader); h != "app_id" {
 			t.Errorf("request did not have App ID header set!")
@@ -69,7 +75,12 @@ func TestSessionOperationsSetSessionTokenHeader(t *testing.T) {
 			t.Errorf("request had Master Key header set!")
 		}
 
-		fmt.Fprintf(w, `{}`)
+		switch currentOp {
+		case opQuery:
+			fmt.Fprintf(w, `{"results":[{}]}`)
+		default:
+			fmt.Fprintf(w, `{}`)
+		}
 	})
 
 	var s Session
@@ -78,10 +89,12 @@ func TestSessionOperationsSetSessionTokenHeader(t *testing.T) {
 		sessionToken: "session_token",
 	}
 
+	currentOp = opCreate
 	if err := s.Create(&User{}); err != nil {
 		t.Errorf("unexpected error on Session.Create: %v\n", err)
 	}
 
+	currentOp = opDelete
 	if err := s.Delete(&User{}); err != nil {
 		t.Errorf("unexpected error on Session.Delete: %v\n", err)
 	}
@@ -91,6 +104,7 @@ func TestSessionOperationsSetSessionTokenHeader(t *testing.T) {
 		t.Errorf("unexpected error on Session.NewUpdate: %v\n", err)
 	}
 	u.Set("key", "value")
+	currentOp = opUpdate
 	if err := u.Execute(); err != nil {
 		t.Errorf("unexpected error executing update: %v\n", err)
 	}
@@ -100,6 +114,7 @@ func TestSessionOperationsSetSessionTokenHeader(t *testing.T) {
 		t.Errorf("unexpected error on Session.NewQuery: %v\n", err)
 	}
 	q.EqualTo("key", "value")
+	currentOp = opQuery
 	if err := q.First(); err != nil {
 		t.Errorf("unexpected error executing query: %v\n", err)
 	}

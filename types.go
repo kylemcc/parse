@@ -3,8 +3,6 @@ package parse
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"net/url"
 	"path"
 	"reflect"
@@ -396,27 +394,38 @@ func getEndpointBase(v interface{}) string {
 
 type Config map[string]interface{}
 
-func GetConfig() (Config, error) {
+type configRequestT struct{}
+
+func (c *configRequestT) method() string {
+	return "GET"
+}
+
+func (c *configRequestT) endpoint() (string, error) {
 	u := url.URL{}
 	u.Scheme = "https"
 	u.Host = parseHost
 	u.Path = path.Join(ParseVersion, "config")
+	return u.String(), nil
+}
 
-	req, err := http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
+func (c *configRequestT) body() (string, error) {
+	return "", nil
+}
 
-	req.Header.Add(AppIdHeader, defaultClient.appId)
-	req.Header.Add(RestKeyHeader, defaultClient.restKey)
+func (c *configRequestT) useMasterKey() bool {
+	return false
+}
 
-	resp, err := defaultClient.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
+func (c *configRequestT) session() *sessionT {
+	return nil
+}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+func (c *configRequestT) contentType() string {
+	return ""
+}
+
+func GetConfig() (Config, error) {
+	b, err := defaultClient.doRequest(&configRequestT{})
 	if err != nil {
 		return nil, err
 	}
@@ -424,7 +433,7 @@ func GetConfig() (Config, error) {
 	c := struct {
 		Params Config `json:"params"`
 	}{}
-	if err := json.Unmarshal(body, &c); err != nil {
+	if err := json.Unmarshal(b, &c); err != nil {
 		return nil, err
 	}
 

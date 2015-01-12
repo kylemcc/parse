@@ -125,7 +125,9 @@ func (c *clientT) doRequest(op requestT) ([]byte, error) {
 		}
 	}
 
-	req.Header.Add("Content-Type", op.contentType())
+	if c := op.contentType(); c != "" {
+		req.Header.Add("Content-Type", op.contentType())
+	}
 	req.Header.Add("Accept-Encoding", "gzip")
 
 	resp, err := defaultClient.httpClient.Do(req)

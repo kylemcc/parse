@@ -22,7 +22,6 @@ const (
 )
 
 var parseHost = "api.parse.com"
-var httpClient = http.DefaultClient
 var fieldNameCache map[reflect.Type]map[string]string = make(map[reflect.Type]map[string]string)
 
 type requestT interface {
@@ -49,23 +48,53 @@ func (e *parseErrorT) Error() string {
 	return fmt.Sprintf("error %d - %s", e.Code, e.Message)
 }
 
-type Client struct {
+type clientT struct {
 	appId     string
 	restKey   string
 	masterKey string
+
+	userAgent  string
+	httpClient *http.Client
 }
 
-var defaultClient *Client
+var defaultClient *clientT
 
+// Initialize the parse library with your API keys
 func Initialize(appId, restKey, masterKey string) {
-	defaultClient = &Client{
-		appId:     appId,
-		restKey:   restKey,
-		masterKey: masterKey,
+	defaultClient = &clientT{
+		appId:      appId,
+		restKey:    restKey,
+		masterKey:  masterKey,
+		userAgent:  "github.com/kylemcc/parse",
+		httpClient: &http.Client{},
 	}
 }
 
-func (c *Client) doRequest(op requestT, dst interface{}) error {
+// Set the timeout for requests to Parse
+//
+// Returns an error if called before parse.Initialize
+func SetHTTPTimeout(t time.Duration) error {
+	if defaultClient == nil {
+		return errors.New("parse.Initialize must be called before parse.SetHTTPTimeout")
+	}
+
+	defaultClient.httpClient.Timeout = t
+	return nil
+}
+
+// Set the User Agent to be specified for requests against Parse
+//
+// Returns an error if called before parse.Initialize
+func SetUserAgent(ua string) error {
+	if defaultClient == nil {
+		return errors.New("parse.Initialize must be called before parse.SetUserAgent")
+	}
+
+	defaultClient.userAgent = ua
+	return nil
+}
+
+func (c *clientT) doRequest(op requestT, dst interface{}) error {
 	rv := reflect.ValueOf(dst)
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
 		return errors.New("v must be a non-nil pointer")
@@ -104,7 +133,7 @@ func (c *Client) doRequest(op requestT, dst interface{}) error {
 	req.Header.Add("Content-Type", op.contentType())
 	req.Header.Add("Accept-Encoding", "gzip")
 
-	resp, err := httpClient.Do(req)
+	resp, err := defaultClient.httpClient.Do(req)
 	if err != nil {
 		return err
 	}

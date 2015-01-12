@@ -410,7 +410,7 @@ func GetConfig() (Config, error) {
 	req.Header.Add(AppIdHeader, defaultClient.appId)
 	req.Header.Add(RestKeyHeader, defaultClient.restKey)
 
-	resp, err := httpClient.Do(req)
+	resp, err := defaultClient.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

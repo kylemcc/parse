@@ -27,10 +27,10 @@ func setupTestServer(handler http.HandlerFunc) *httptest.Server {
 	}
 
 	ctx.oldHost = parseHost
-	ctx.oldHttpClient = httpClient
+	ctx.oldHttpClient = defaultClient.httpClient
 
 	parseHost = _url.Host
-	httpClient = &http.Client{
+	defaultClient.httpClient = &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
@@ -44,7 +44,7 @@ func setupTestServer(handler http.HandlerFunc) *httptest.Server {
 func teardownTestServer() {
 	ctx.ts.Close()
 	parseHost = ctx.oldHost
-	httpClient = ctx.oldHttpClient
+	defaultClient.httpClient = ctx.oldHttpClient
 }
 
 func TestMain(m *testing.M) {

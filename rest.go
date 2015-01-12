@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -101,6 +102,7 @@ func (c *Client) doRequest(op requestT, dst interface{}) error {
 	}
 
 	req.Header.Add("Content-Type", op.contentType())
+	req.Header.Add("Accept-Encoding", "gzip")
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -172,8 +174,19 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 
 func handleResponse(resp *http.Response, op requestT, dst interface{}) error {
 	defer resp.Body.Close()
+	var reader io.ReadCloser
+	switch resp.Header.Get("Content-Encoding") {
+	case "gzip":
+		if r, err := gzip.NewReader(resp.Body); err != nil {
+			return err
+		} else {
+			reader = r
+		}
+	default:
+		reader = resp.Body
+	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return err
 	}

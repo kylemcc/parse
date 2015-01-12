@@ -22,8 +22,9 @@ type sessionT struct {
 
 func Login(username, password string) (Session, error) {
 	s := &sessionT{user: &User{}}
-	err := defaultClient.doRequest(&loginRequestT{username: username, password: password}, s.user)
-	if err != nil {
+	if b, err := defaultClient.doRequest(&loginRequestT{username: username, password: password}); err != nil {
+		return nil, err
+	} else if err := handleResponse(b, s.user); err != nil {
 		return nil, err
 	}
 

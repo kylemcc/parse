@@ -249,7 +249,11 @@ func (q *queryT) UseMasterKey() Query {
 func (q *queryT) Get(id string) error {
 	q.op = otGet
 	q.instId = &id
-	return defaultClient.doRequest(q, q.inst)
+	if body, err := defaultClient.doRequest(q); err != nil {
+		return err
+	} else {
+		return handleResponse(body, q.inst)
+	}
 }
 
 func (q *queryT) OrderBy(fs ...string) Query {
@@ -669,8 +673,13 @@ func (q *queryT) Each(rc interface{}, ec chan<- error) error {
 			s := reflect.New(reflect.SliceOf(rt.Elem()))
 			s.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rt.Elem()), 0, 100))
 
-			err := defaultClient.doRequest(q, s.Interface())
+			//err := defaultClient.doRequest(q, s.Interface())
+			b, err := defaultClient.doRequest(q)
 			if err != nil && err != ErrNoRows {
+				ec <- err
+			}
+
+			if err := handleResponse(b, s.Interface()); err != nil {
 				ec <- err
 			}
 
@@ -700,7 +709,11 @@ func (q *queryT) Each(rc interface{}, ec chan<- error) error {
 
 func (q *queryT) Find() error {
 	q.op = otQuery
-	return defaultClient.doRequest(q, q.inst)
+	if b, err := defaultClient.doRequest(q); err != nil {
+		return err
+	} else {
+		return handleResponse(b, q.inst)
+	}
 }
 
 func (q *queryT) First() error {
@@ -715,7 +728,9 @@ func (q *queryT) First() error {
 		dv := reflect.New(reflect.SliceOf(rvi.Type()))
 		dv.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rvi.Type()), 0, 1))
 
-		if err := defaultClient.doRequest(q, dv.Interface()); err != nil {
+		if b, err := defaultClient.doRequest(q); err != nil {
+			return err
+		} else if err := handleResponse(b, dv.Interface()); err != nil {
 			return err
 		}
 
@@ -724,7 +739,9 @@ func (q *queryT) First() error {
 			rv.Elem().Set(dv.Elem().Index(0))
 		}
 	} else if rvi.Kind() == reflect.Slice {
-		if err := defaultClient.doRequest(q, q.inst); err != nil {
+		if b, err := defaultClient.doRequest(q); err != nil {
+			return err
+		} else if err := handleResponse(b, q.inst); err != nil {
 			return err
 		}
 	} else {
@@ -740,8 +757,12 @@ func (q *queryT) Count() (int64, error) {
 	q.count = &c
 
 	var count int64
-	err := defaultClient.doRequest(q, &count)
-	return count, err
+	if b, err := defaultClient.doRequest(q); err != nil {
+		return 0, err
+	} else {
+		err := handleResponse(b, &count)
+		return count, err
+	}
 }
 
 func (q *queryT) payload() (string, error) {

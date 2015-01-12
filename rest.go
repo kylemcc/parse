@@ -94,15 +94,10 @@ func SetUserAgent(ua string) error {
 	return nil
 }
 
-func (c *clientT) doRequest(op requestT, dst interface{}) error {
-	rv := reflect.ValueOf(dst)
-	if rv.Kind() != reflect.Ptr || rv.IsNil() {
-		return errors.New("v must be a non-nil pointer")
-	}
-
+func (c *clientT) doRequest(op requestT) ([]byte, error) {
 	ep, err := op.endpoint()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	method := op.method()
@@ -110,14 +105,14 @@ func (c *clientT) doRequest(op requestT, dst interface{}) error {
 	if method == "POST" || method == "PUT" {
 		b, err := op.body()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		body = strings.NewReader(b)
 	}
 
 	req, err := http.NewRequest(method, ep, body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req.Header.Add(AppIdHeader, defaultClient.appId)
@@ -135,10 +130,63 @@ func (c *clientT) doRequest(op requestT, dst interface{}) error {
 
 	resp, err := defaultClient.httpClient.Do(req)
 	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	var reader io.ReadCloser
+	switch resp.Header.Get("Content-Encoding") {
+	case "gzip":
+		if r, err := gzip.NewReader(resp.Body); err != nil {
+			return nil, err
+		} else {
+			reader = r
+		}
+	default:
+		reader = resp.Body
+	}
+
+	respBody, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	// Error formats are consistent. If the response is an error,
+	// return a ParseError
+	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
+		ret := parseErrorT{}
+		if err := json.Unmarshal(respBody, &ret); err != nil {
+			return nil, err
+		}
+		return nil, &ret
+	}
+
+	return respBody, nil
+}
+
+func handleResponse(body []byte, dst interface{}) error {
+	rv := reflect.ValueOf(dst)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return errors.New("v must be a non-nil pointer")
+	}
+
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(body, &data); err != nil {
 		return err
 	}
 
-	return handleResponse(resp, op, dst)
+	if c, ok := data["count"]; ok {
+		return populateValue(dst, c)
+	} else if r, ok := data["results"]; ok {
+		if rl, ok := r.([]interface{}); ok && len(rl) == 0 {
+			return ErrNoRows
+		}
+
+		// Handle query results
+		return populateValue(dst, r)
+	} else {
+		return populateValue(dst, data)
+	}
 }
 
 func getFields(t reflect.Type, recurse bool) []reflect.StructField {
@@ -199,55 +247,6 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 
 	fieldNameCache[t] = fieldMap
 	return fieldMap
-}
-
-func handleResponse(resp *http.Response, op requestT, dst interface{}) error {
-	defer resp.Body.Close()
-	var reader io.ReadCloser
-	switch resp.Header.Get("Content-Encoding") {
-	case "gzip":
-		if r, err := gzip.NewReader(resp.Body); err != nil {
-			return err
-		} else {
-			reader = r
-		}
-	default:
-		reader = resp.Body
-	}
-
-	body, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-
-	// Error formats are consistent. If the response is an error,
-	// return a ParseError
-	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
-		ret := parseErrorT{}
-		if err = json.Unmarshal(body, &ret); err != nil {
-			return err
-		}
-		return &ret
-	}
-
-	data := make(map[string]interface{})
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		return err
-	}
-
-	if c, ok := data["count"]; ok {
-		return populateValue(dst, c)
-	} else if r, ok := data["results"]; ok {
-		if rl, ok := r.([]interface{}); ok && len(rl) == 0 {
-			return ErrNoRows
-		}
-
-		// Handle query results
-		return populateValue(dst, r)
-	} else {
-		return populateValue(dst, data)
-	}
 }
 
 func populateValue(dst interface{}, src interface{}) error {

@@ -96,5 +96,9 @@ func create(v interface{}, useMasterKey bool, currentSession *sessionT) error {
 		shouldUseMasterKey: useMasterKey,
 		currentSession:     currentSession,
 	}
-	return defaultClient.doRequest(cr, v)
+	if b, err := defaultClient.doRequest(cr); err != nil {
+		return err
+	} else {
+		return handleResponse(b, v)
+	}
 }

@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -14,7 +15,13 @@ func Delete(v interface{}, useMasterKey bool) error {
 }
 
 func _delete(v interface{}, useMasterKey bool, currentSession *sessionT) error {
-	return defaultClient.doRequest(&deleteT{inst: v, shouldUseMasterKey: useMasterKey, currentSession: currentSession}, v)
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return errors.New("v must be a non-nil pointer")
+	}
+
+	_, err := defaultClient.doRequest(&deleteT{inst: v, shouldUseMasterKey: useMasterKey, currentSession: currentSession})
+	return err
 }
 
 type deleteT struct {

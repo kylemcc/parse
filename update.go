@@ -232,7 +232,11 @@ func (u *updateT) Execute() error {
 			}
 		}
 	}
-	return defaultClient.doRequest(u, u.inst)
+	if b, err := defaultClient.doRequest(u); err != nil {
+		return err
+	} else {
+		return handleResponse(b, u.inst)
+	}
 }
 
 func (u *updateT) UseMasterKey() Update {

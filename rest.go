@@ -19,6 +19,7 @@ const (
 	RestKeyHeader      = "X-Parse-REST-API-Key"
 	MasterKeyHeader    = "X-Parse-Master-Key"
 	SessionTokenHeader = "X-Parse-Session-Token"
+	UserAgentHeader    = "User-Agent"
 )
 
 var parseHost = "api.parse.com"
@@ -115,6 +116,7 @@ func (c *clientT) doRequest(op requestT) ([]byte, error) {
 		return nil, err
 	}
 
+	req.Header.Add(UserAgentHeader, defaultClient.userAgent)
 	req.Header.Add(AppIdHeader, defaultClient.appId)
 	if op.useMasterKey() && c.masterKey != "" && op.session() == nil {
 		req.Header.Add(MasterKeyHeader, c.masterKey)

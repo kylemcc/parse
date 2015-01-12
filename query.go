@@ -201,6 +201,8 @@ type Query interface {
 
 	// Retrieve the number of results that satisfy the given query
 	Count() (int64, error)
+
+	requestT
 }
 
 type queryT struct {

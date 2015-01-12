@@ -109,6 +109,8 @@ type Update interface {
 	// Execute this update. This method also updates the proper fields
 	// on the provided value with their repective new values
 	Execute() error
+
+	requestT
 }
 
 type updateT struct {

@@ -81,18 +81,50 @@ func (i *Installation) Endpoint() string {
 }
 
 type ACL interface {
+	// Returns whether public read access is enabled on this ACL
 	PublicReadAccess() bool
+
+	// Returns whether public write access is enabled on this ACL
 	PublicWriteAccess() bool
+
+	// Returns whether read access is enabled on this ACL for the
+	// given role
 	RoleReadAccess(role string) bool
+
+	// Returns whether write access is enabled on this ACL for the
+	// given role
 	RoleWriteAccess(role string) bool
+
+	// Returns whether read access is enabled on this ACL for the
+	// given user
 	ReadAccess(userId string) bool
+
+	// Returns whether write access is enabled on this ACL for the
+	// given user
 	WriteAccess(userId string) bool
 
+	// Allow the object to which this ACL is attached be read
+	// by anyone
 	SetPublicReadAccess(allowed bool) ACL
+
+	// Allow the object to which this ACL is attached to be
+	// updated by anyone
 	SetPublicWriteAccess(allowed bool) ACL
+
+	// Allow the object to which this ACL is attached to be
+	// read by the provided role
 	SetRoleReadAccess(role string, allowed bool) ACL
+
+	// Allow the object to which this ACL is attached to be
+	// updated by the provided role
 	SetRoleWriteAccess(role string, allowed bool) ACL
+
+	// Allow the object to which this ACL is attached to be
+	// read by the provided user
 	SetReadAccess(userId string, allowed bool) ACL
+
+	// Allow the object to which this ACL is attached to be
+	// updated by the provided user
 	SetWriteAccess(userId string, allowed bool) ACL
 }
 

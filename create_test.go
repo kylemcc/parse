@@ -149,3 +149,73 @@ func TestCreateUseMasterKey(t *testing.T) {
 		t.Errorf("unexpected error on create: %v\n", err)
 	}
 }
+
+type TestTypeOmitEmpty struct {
+	StrField   string
+	OEStrField string `parse:",omitempty"`
+
+	BoolField   bool
+	OEBoolField bool `parse:",omitempty"`
+
+	IntField   int
+	OEIntField int `parse:",omitempty"`
+
+	ArrField   []string
+	OEArrField []string `parse:",omitempty"`
+
+	EmptyArrField   []string
+	OEEmptyArrField []string `parse:",omitempty"`
+
+	MapField   map[string]interface{}
+	OEMapField map[string]interface{} `parse:",omitempty"`
+
+	EmptyMapField   map[string]interface{}
+	OEEmptyMapField map[string]interface{} `parse:",omitempty"`
+
+	PtrField   *User
+	OEPtrField *User `parse:",omitempty"`
+}
+
+func TestCreateOmitEmpty(t *testing.T) {
+	cr := &createT{
+		v: &TestTypeOmitEmpty{
+			EmptyArrField:   []string{},
+			OEEmptyArrField: []string{},
+			EmptyMapField:   map[string]interface{}{},
+			OEEmptyMapField: map[string]interface{}{},
+		},
+	}
+
+	e := map[string]interface{}{
+		"strField":      "",
+		"boolField":     false,
+		"intField":      0,
+		"arrField":      nil,
+		"emptyArrField": []string{},
+		"mapField":      nil,
+		"emptyMapField": map[string]interface{}{},
+		"ptrField":      nil,
+	}
+
+	expected := map[string]interface{}{}
+	eb, _ := json.Marshal(e)
+	_ = json.Unmarshal(eb, &expected)
+
+	actual := map[string]interface{}{}
+	b, err := cr.body()
+	if err != nil {
+		t.Errorf("unexpected error generating payload: %v\n", err)
+		t.FailNow()
+	}
+
+	err = json.Unmarshal([]byte(b), &actual)
+	if err != nil {
+		t.Errorf("unexpected error unmarshaling payload: %v\n", err)
+		t.FailNow()
+
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("payload different from expected. expected:\n%s\n\ngot:\n%s\n", eb, b)
+	}
+}

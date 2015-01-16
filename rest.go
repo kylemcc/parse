@@ -244,8 +244,8 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 
 	fieldMap := make(map[string]string)
 	for _, f := range fields {
-		if tag := f.Tag.Get("parse"); tag != "" && tag != "-" {
-			fieldMap[tag] = f.Name
+		if name, _ := parseTag(f.Tag.Get("parse")); name != "" && name != "-" {
+			fieldMap[name] = f.Name
 		}
 	}
 

@@ -36,21 +36,27 @@ func (c *createT) body() (string, error) {
 	fields := getFields(rt, false)
 
 	for _, f := range fields {
-		var t string
-		if t = f.Tag.Get("parse"); t == "-" || t == "objectId" || f.Name == "Id" || f.Type == reflect.TypeOf(Base{}) {
+		var name string
+		var fv reflect.Value
+
+		if n, o := parseTag(f.Tag.Get("parse")); n == "-" || n == "objectId" || f.Name == "Id" || f.Type == reflect.TypeOf(Base{}) {
 			continue
+		} else if fv = rvi.FieldByName(f.Name); !fv.IsValid() || o == "omitempty" && isEmptyValue(fv) {
+			continue
+		} else {
+			name = n
 		}
+
 		var fname string
-		if t != "" {
-			fname = t
+		if name != "" {
+			fname = name
 		} else {
 			fname = firstToLower(f.Name)
 		}
 
-		if fv := rvi.FieldByName(f.Name); fv.IsValid() {
-			if fname == "ACL" && fv.IsNil() {
-				continue
-			}
+		if canBeNil(fv) && fv.IsNil() {
+			payload[fname] = nil
+		} else {
 			payload[fname] = getQueryRepr(c.v, f.Name, fv.Interface())
 		}
 	}

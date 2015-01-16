@@ -43,7 +43,7 @@ type Base struct {
 	Id        string                 `parse:"objectId"`
 	CreatedAt time.Time              `parse:"-"`
 	UpdatedAt time.Time              `parse:"-"`
-	ACL       ACL                    `parse:"ACL"`
+	ACL       ACL                    `parse:"ACL,omitempty"`
 	Extra     map[string]interface{} `parse:"-"`
 }
 

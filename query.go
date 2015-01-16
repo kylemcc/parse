@@ -673,7 +673,7 @@ func (q *queryT) Each(rc interface{}, ec chan<- error) error {
 			s := reflect.New(reflect.SliceOf(rt.Elem()))
 			s.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rt.Elem()), 0, 100))
 
-			//err := defaultClient.doRequest(q, s.Interface())
+			// TODO: handle errors and retry if possible
 			b, err := defaultClient.doRequest(q)
 			if err != nil && err != ErrNoRows {
 				ec <- err

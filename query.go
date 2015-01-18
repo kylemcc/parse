@@ -173,7 +173,7 @@ type Query interface {
 
 	// Iterate of each result of a query, passing the result to the provided
 	// channel rc. Errors are passed to the channel ec
-	Each(rc interface{}, ec chan<- error) error
+	Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) error
 
 	// Retrieves a list of objects that satisfy the given query. The results
 	// are assigned to the slice provided to NewQuery.
@@ -640,7 +640,7 @@ func (q *queryT) Or(qs ...Query) Query {
 	return q
 }
 
-func (q *queryT) Each(rc interface{}, ec chan<- error) error {
+func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) error {
 	rv := reflect.ValueOf(rc)
 	rt := rv.Type()
 	if rt.Kind() != reflect.Chan {
@@ -669,7 +669,14 @@ func (q *queryT) Each(rc interface{}, ec chan<- error) error {
 	q.Limit(100)
 
 	go func() {
+	loop:
 		for {
+			select {
+			case <-cancel:
+				break loop
+			default:
+			}
+
 			s := reflect.New(reflect.SliceOf(rt.Elem()))
 			s.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rt.Elem()), 0, 100))
 

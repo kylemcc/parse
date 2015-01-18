@@ -619,7 +619,7 @@ func TestEach(t *testing.T) {
 	rc := make(chan *User)
 	ec := make(chan error)
 
-	err = q.Each(rc, ec)
+	err = q.Each(rc, ec, nil)
 	if err != nil {
 		t.Errorf("Unexpected error executing each: %v\n", err)
 		t.FailNow()

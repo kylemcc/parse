@@ -86,3 +86,4 @@ func main() {
 - Push Notifications
 - Analytics
 - File upload/retrieval
+- Batch operations

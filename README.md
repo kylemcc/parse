@@ -49,7 +49,7 @@ func main() {
 	ec := make(chan error)
 
 	// .Each will retrieve all results for a query and send them to the provided channel
-	q2.Each(rc, ec)
+	q2.Each(rc, ec, nil)
 	for {
 		select {
 		case u, ok := <-rc:

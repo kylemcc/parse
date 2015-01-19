@@ -171,8 +171,16 @@ type Query interface {
 	// q.Each(...)
 	Or(qs ...Query) Query
 
-	// Iterate of each result of a query, passing the result to the provided
-	// channel rc. Errors are passed to the channel ec
+	// Fetch all results for a query, sending each result to the provided
+	// channel rc. The element type of rc should match that of the query,
+	// otherwise an error will be returned.
+	//
+	// Errors are passed to the channel ec. If an error occurns during iteration,
+	// iteration will stop
+	//
+	// The third argument is a channel which may be used for cancelling
+	// iteration. Simply send an empty struct value to the channel,
+	// and iteration will discontinue. This argument may be nil.
 	Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) error
 
 	// Retrieves a list of objects that satisfy the given query. The results
@@ -691,7 +699,12 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 			}
 
 			for i := 0; i < s.Elem().Len(); i++ {
-				rv.Send(s.Elem().Index(i))
+				select {
+				case <-cancel:
+					break loop
+				default:
+					rv.Send(s.Elem().Index(i))
+				}
 			}
 
 			if s.Elem().Len() < *q.limit {

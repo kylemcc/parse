@@ -56,6 +56,8 @@ type clientT struct {
 
 	userAgent  string
 	httpClient *http.Client
+
+	limiter limiter
 }
 
 var defaultClient *clientT
@@ -95,6 +97,23 @@ func SetUserAgent(ua string) error {
 	return nil
 }
 
+// Set the maximum number of requests per second, with an optional
+// burst rate.
+//
+// Returns an error if called before parse.Initialize
+//
+// If this option is set, this library will restrict calling code to
+// a maximum number of requests per second. Requests exceeding this limit
+// will block for the appropriate period of time.
+func SetRateLimit(limit, burst uint) error {
+	if defaultClient == nil {
+		return errors.New("parse.Initialize must be called before parse.SetHTTPTimeout")
+	}
+
+	defaultClient.limiter = newRateLimiter(limit, burst)
+	return nil
+}
+
 func (c *clientT) doRequest(op requestT) ([]byte, error) {
 	ep, err := op.endpoint()
 	if err != nil {
@@ -131,6 +150,10 @@ func (c *clientT) doRequest(op requestT) ([]byte, error) {
 		req.Header.Add("Content-Type", op.contentType())
 	}
 	req.Header.Add("Accept-Encoding", "gzip")
+
+	if c.limiter != nil {
+		c.limiter.limit()
+	}
 
 	resp, err := defaultClient.httpClient.Do(req)
 	if err != nil {

@@ -171,7 +171,13 @@ func (u *updateT) SetACL(a ACL) Update {
 	return u
 }
 
-func (u *updateT) Execute() error {
+func (u *updateT) Execute() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
 	rv := reflect.ValueOf(u.inst)
 	rvi := reflect.Indirect(rv)
 	fieldMap := getFieldNameMap(rv)

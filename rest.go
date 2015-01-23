@@ -276,7 +276,13 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 	return fieldMap
 }
 
-func populateValue(dst interface{}, src interface{}) error {
+func populateValue(dst interface{}, src interface{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
 	dv := reflect.ValueOf(dst)
 	dvi := reflect.Indirect(dv)
 

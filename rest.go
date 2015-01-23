@@ -286,6 +286,11 @@ func populateValue(dst interface{}, src interface{}) (err error) {
 	dv := reflect.ValueOf(dst)
 	dvi := reflect.Indirect(dv)
 
+	if src == nil {
+		dvi.Set(reflect.Zero(dvi.Type()))
+		return nil
+	}
+
 	sv := reflect.ValueOf(src)
 	svi := reflect.Indirect(sv)
 
@@ -365,7 +370,7 @@ func populateValue(dst interface{}, src interface{}) (err error) {
 
 					k = firstToUpper(k)
 
-					if f := dvi.FieldByName(k); f.IsValid() {
+					if f := dvi.FieldByName(k); f.IsValid() && src != nil {
 						if f.Kind() == reflect.Ptr {
 							if f.IsNil() {
 								f.Set(reflect.New(f.Type().Elem()))

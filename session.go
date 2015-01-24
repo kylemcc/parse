@@ -13,6 +13,7 @@ type Session interface {
 type loginRequestT struct {
 	username string
 	password string
+	s        *sessionT
 }
 
 type sessionT struct {
@@ -34,6 +35,23 @@ func Login(username, password string) (Session, error) {
 		}
 	}
 	return s, nil
+}
+
+// Log in as the user identified by the session token st
+func Become(st string) (Session, error) {
+	r := &loginRequestT{
+		s: &sessionT{
+			sessionToken: st,
+			user:         &User{},
+		},
+	}
+
+	if b, err := defaultClient.doRequest(r); err != nil {
+		return nil, err
+	} else if err := handleResponse(b, r.s.user); err != nil {
+		return nil, err
+	}
+	return r.s, nil
 }
 
 func (s *sessionT) User() *User {
@@ -76,7 +94,11 @@ func (s *loginRequestT) endpoint() (string, error) {
 	u := url.URL{}
 	u.Scheme = "https"
 	u.Host = parseHost
-	u.Path = "/1/login"
+	if s.s != nil {
+		u.Path = "/1/users/me"
+	} else {
+		u.Path = "/1/login"
+	}
 
 	v := url.Values{}
 	v["username"] = []string{s.username}
@@ -95,7 +117,7 @@ func (s *loginRequestT) useMasterKey() bool {
 }
 
 func (s *loginRequestT) session() *sessionT {
-	return nil
+	return s.s
 }
 
 func (s *loginRequestT) contentType() string {

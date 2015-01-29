@@ -233,10 +233,9 @@ func getFields(t reflect.Type, recurse bool) []reflect.StructField {
 		case reflect.Struct:
 			if recurse {
 				fields = append(fields, getFields(ft, recurse)...)
-			} else {
-				if len(f.PkgPath) == 0 {
-					fields = append(fields, f)
-				}
+			}
+			if len(f.PkgPath) == 0 {
+				fields = append(fields, f)
 			}
 		default:
 			if len(f.PkgPath) == 0 {

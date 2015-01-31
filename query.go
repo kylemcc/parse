@@ -648,7 +648,10 @@ func (q *queryT) Or(qs ...Query) Query {
 	return q
 }
 
+var chanInterfaceType = reflect.TypeOf(make(chan interface{}, 0))
+
 func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) error {
+	instType := reflect.TypeOf(q.inst)
 	rv := reflect.ValueOf(rc)
 	rt := rv.Type()
 	if rt.Kind() != reflect.Chan {
@@ -656,12 +659,12 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 	}
 
 	if rt.Elem().Kind() == reflect.Ptr {
-		if rt.Elem() != reflect.TypeOf(q.inst) {
-			return fmt.Errorf("1rc must be of type chan %s, received chan %s", reflect.TypeOf(q.inst), rt.Elem())
+		if rt.Elem() != instType && rt != chanInterfaceType {
+			return fmt.Errorf("1rc must be of type chan %s, received chan %s", instType, rt.Elem())
 		}
 	} else {
-		if rt.Elem() != reflect.TypeOf(q.inst).Elem() {
-			return fmt.Errorf("2rc must be of type chan %s, received chan %s", reflect.TypeOf(q.inst).Elem(), rt.Elem())
+		if rt.Elem() != instType.Elem() && rt != chanInterfaceType {
+			return fmt.Errorf("2rc must be of type chan %s, received chan %s", instType.Elem(), rt.Elem())
 		}
 	}
 
@@ -677,6 +680,12 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 	q.Limit(100)
 
 	go func() {
+		var sliceType reflect.Type
+		if rt == chanInterfaceType {
+			sliceType = reflect.SliceOf(instType)
+		} else {
+			sliceType = reflect.SliceOf(rt.Elem())
+		}
 	loop:
 		for {
 			select {
@@ -685,8 +694,8 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 			default:
 			}
 
-			s := reflect.New(reflect.SliceOf(rt.Elem()))
-			s.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rt.Elem()), 0, 100))
+			s := reflect.New(sliceType)
+			s.Elem().Set(reflect.MakeSlice(sliceType, 0, 100))
 
 			// TODO: handle errors and retry if possible
 			b, err := defaultClient.doRequest(q)

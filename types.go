@@ -376,7 +376,7 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("cannot unmarshal type %s to type Date", s.Type)
 	}
 
-	t, err := time.Parse(s.Iso, "2006-01-02T15:04:05.000Z")
+	t, err := time.Parse("2006-01-02T15:04:05.000Z", s.Iso)
 	if err != nil {
 		return err
 	}

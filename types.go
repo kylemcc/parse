@@ -70,6 +70,19 @@ func (u *User) Endpoint() string {
 // fields with no matching struct field will be stored in User.Extra (map[string]interface{})
 type Installation struct {
 	Base
+	Badge          int      `parse:",omitempty"`
+	Channels       []string `parse:",omitempty"`
+	TimeZone       string
+	DeviceType     string
+	PushType       string `parse:",omitempty"`
+	GCMSenderId    string `parse:",omitempty"`
+	InstallationId string
+	DeviceToken    string   `parse:",omitempty"`
+	ChannelUris    []string `parse:",omitempty"`
+	AppName        string
+	AppVersion     string
+	ParseVersion   string
+	AppIdentifier  string
 }
 
 func (i *Installation) ClassName() string {

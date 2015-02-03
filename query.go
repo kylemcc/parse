@@ -926,6 +926,10 @@ func quote(re string) string {
 }
 
 func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
+	if v == nil {
+		return nil
+	}
+
 	var fname string
 	fieldMap := getFieldNameMap(reflect.ValueOf(inst))
 

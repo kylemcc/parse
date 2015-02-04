@@ -699,11 +699,11 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 
 			// TODO: handle errors and retry if possible
 			b, err := defaultClient.doRequest(q)
-			if err != nil && err != ErrNoRows {
+			if err != nil {
 				ec <- err
 			}
 
-			if err := handleResponse(b, s.Interface()); err != nil {
+			if err := handleResponse(b, s.Interface()); err != nil && err != ErrNoRows {
 				ec <- err
 			}
 

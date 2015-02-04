@@ -359,7 +359,7 @@ func populateValue(dst interface{}, src interface{}) (err error) {
 				}
 
 				for k, v := range m {
-					if k == "__type" {
+					if k == "__type" || k == "className" {
 						continue
 					}
 
@@ -408,6 +408,20 @@ func populateValue(dst interface{}, src interface{}) (err error) {
 		} else {
 			return fmt.Errorf("expected map, got %s", svi.Kind())
 		}
+	case reflect.Interface:
+		if m, ok := src.(map[string]interface{}); ok {
+			if c, ok := m["className"]; ok {
+				if t, ok := registeredTypes[c.(string)]; ok {
+					tv := reflect.New(t)
+					if err := populateValue(tv.Interface(), src); err != nil {
+						return err
+					}
+					dvi.Set(tv)
+					return nil
+				}
+			}
+		}
+		fallthrough
 	default:
 		if dvi.Kind() == reflect.Ptr {
 			if dvi.IsNil() {

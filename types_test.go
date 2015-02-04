@@ -212,3 +212,69 @@ func TestGetEndpointBase(t *testing.T) {
 		}
 	}
 }
+
+func TestRegisterType(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"f1":{"__type":"Object","className":"CustType1","a":1,"b":"blah","c":true},"f2":{"__type":"Object","className":"CustType2","z":73.37,"y":"foobar","X":11}}`)
+	})
+	defer teardownTestServer()
+
+	type CustType1 struct {
+		A int
+		B string
+		C bool
+	}
+
+	type CustType2 struct {
+		Z float64
+		Y string
+		X int
+	}
+
+	type TestType struct {
+		F1 interface{}
+		F2 interface{}
+	}
+
+	RegisterType(new(CustType1))
+	RegisterType(new(CustType2))
+
+	tt := TestType{}
+	q, _ := NewQuery(&tt)
+	if err := q.Get("123"); err != nil {
+		t.Errorf("Unexpected error on Get: %v\n", err)
+		t.FailNow()
+	}
+
+	if c1, ok := tt.F1.(*CustType1); ok {
+		if c1.A != 1 {
+			t.Errorf("CustType1.A value different from expected - expected 1, got [%v]\n", c1.A)
+		}
+
+		if c1.B != "blah" {
+			t.Errorf("CustType1.B value different from expected - expected \"blah\", got [%q]\n", c1.B)
+		}
+
+		if c1.C != true {
+			t.Errorf("CustType1.C value different from expected - expected true, got [%v]\n", c1.C)
+		}
+	} else {
+		t.Errorf("Expected F1 to be of type *CustType1, got: %v\n", reflect.TypeOf(tt.F1))
+	}
+
+	if c2, ok := tt.F2.(*CustType2); ok {
+		if c2.Z != 73.37 {
+			t.Errorf("CustType2.Z value different from expected - expected 73.37, got [%v]\n", c2.Z)
+		}
+
+		if c2.Y != "foobar" {
+			t.Errorf("CustType2.Y value different from expected - expected \"foobar\", got [%q]\n", c2.Y)
+		}
+
+		if c2.X != 11 {
+			t.Errorf("CustType2.X value different from expected - expected 11, got [%v]\n", c2.X)
+		}
+	} else {
+		t.Errorf("Expected F2 to be of type *CustType2, got: %v\n", reflect.TypeOf(tt.F1))
+	}
+}

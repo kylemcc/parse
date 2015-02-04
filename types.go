@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var registeredTypes = map[string]reflect.Type{}
+
 // An interface for custom Parse types. Contains a single method:
 //
 // ClassName() - returns a string containing the class name as it appears in your
@@ -483,4 +485,36 @@ func GetConfig() (Config, error) {
 	}
 
 	return c.Params, nil
+}
+
+// Register a type so that it can be handled when populating struct values.
+//
+// The provided value will be registered under the name provided by the ClassName method
+// if it is implemented, otherwise by the name of the type. When handling Parse responses,
+// any object value with __type "Object" or "Pointer" and className matching the type provided
+// will be unmarshaled into pointer to the provided type.
+//
+// This is useful in at least one instance: If you have an array or object field on a
+// Parse class that contains pointers to or instances of Objects of arbitrary types
+// that cannot be represented by a single type on your struct definition, but you would
+// still like to be able to populate your struct with these values.
+//
+// In order to accomplish this, the field in question on your struct definition
+// should either be of type interface{}, or another interface type that all possible
+// types implement.
+//
+// Accepts a value t, representing the type to be registered. The value
+// t should be either a struct value, or a pointer to a struct. Otherwise,
+// an error will be returned.
+func RegisterType(t interface{}) error {
+	rv := reflect.ValueOf(t)
+	rvi := reflect.Indirect(rv)
+
+	if rvi.Kind() != reflect.Struct {
+		return fmt.Errorf("expected struct or pointer to struct, got: %v", rv.Kind())
+	}
+
+	className := getClassName(t)
+	registeredTypes[className] = rvi.Type()
+	return nil
 }

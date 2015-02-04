@@ -150,3 +150,65 @@ func TestConfig(t *testing.T) {
 		t.Errorf("config was different from expected.\nGot:\n%v\nExpected:\n%v\n", c, expectedConf)
 	}
 }
+
+type ClassNameTestType struct{}
+
+type CustomClassNameTestType struct{}
+
+func (c *CustomClassNameTestType) Endpoint() string {
+	return "other/ep"
+}
+func (c *CustomClassNameTestType) ClassName() string {
+	return "OtherName"
+}
+
+type CustomClassNameTestType2 struct{}
+
+func (c CustomClassNameTestType2) Endpoint() string {
+	return "other/ep2"
+}
+func (c CustomClassNameTestType2) ClassName() string {
+	return "OtherName2"
+}
+
+func TestGetClassName(t *testing.T) {
+	cases := []struct {
+		inst     interface{}
+		expected string
+	}{
+		{&ClassNameTestType{}, "ClassNameTestType"},
+		{&CustomClassNameTestType{}, "OtherName"},
+		{&CustomClassNameTestType2{}, "OtherName2"},
+	}
+
+	for _, tc := range cases {
+		actual := getClassName(tc.inst)
+		if actual != tc.expected {
+			t.Errorf("Wrong class name returned for test case [%+v] - got [%s]\n", tc, actual)
+		}
+	}
+}
+
+func TestGetEndpointBase(t *testing.T) {
+	cases := []struct {
+		inst     interface{}
+		expected string
+	}{
+		{&ClassNameTestType{}, "1/classes/ClassNameTestType"},
+		{&[]ClassNameTestType{}, "1/classes/ClassNameTestType"},
+		{&[]*ClassNameTestType{}, "1/classes/ClassNameTestType"},
+		{&CustomClassNameTestType{}, "1/other/ep"},
+		{&[]CustomClassNameTestType{}, "1/other/ep"},
+		{&[]*CustomClassNameTestType{}, "1/other/ep"},
+		{&CustomClassNameTestType2{}, "1/other/ep2"},
+		{&[]CustomClassNameTestType2{}, "1/other/ep2"},
+		{&[]*CustomClassNameTestType2{}, "1/other/ep2"},
+	}
+
+	for _, tc := range cases {
+		actual := getEndpointBase(tc.inst)
+		if actual != tc.expected {
+			t.Errorf("Wrong endpoint name returned for test case [%+v] - got [%s]\n", tc, actual)
+		}
+	}
+}

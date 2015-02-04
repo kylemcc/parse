@@ -429,7 +429,7 @@ func getEndpointBase(v interface{}) string {
 	if iv, ok := inst.(iParseEp); ok {
 		p = iv.Endpoint()
 	} else {
-		cname := getClassName(v)
+		cname := getClassName(inst)
 		p = path.Join("classes", cname)
 	}
 

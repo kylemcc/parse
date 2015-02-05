@@ -57,7 +57,7 @@ func (c *createT) body() (string, error) {
 		if canBeNil(fv) && fv.IsNil() {
 			payload[fname] = nil
 		} else {
-			payload[fname] = getQueryRepr(c.v, f.Name, fv.Interface())
+			payload[fname] = encodeForRequest(fv.Interface())
 		}
 	}
 

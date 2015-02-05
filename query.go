@@ -294,13 +294,13 @@ func (q *queryT) Keys(fs ...string) Query {
 }
 
 func (q *queryT) EqualTo(f string, v interface{}) Query {
-	qv := getQueryRepr(q.inst, f, v)
+	qv := encodeForRequest(v)
 	q.where[f] = qv
 	return q
 }
 
 func (q *queryT) NotEqualTo(f string, v interface{}) Query {
-	qv := getQueryRepr(q.inst, f, v)
+	qv := encodeForRequest(v)
 	if cv, ok := q.where[f]; ok {
 		if m, ok := cv.(map[string]interface{}); ok {
 			m["$ne"] = qv
@@ -923,84 +923,4 @@ func (q *queryT) MarshalJSON() ([]byte, error) {
 // value that matches it. MongoDb (what backs Parse) uses PCRE syntax
 func quote(re string) string {
 	return "\\Q" + strings.Replace(re, "\\E", "\\E\\\\E\\Q", -1) + "\\E"
-}
-
-func getQueryRepr(inst interface{}, f string, v interface{}) interface{} {
-	if v == nil {
-		return nil
-	}
-
-	var fname string
-	fieldMap := getFieldNameMap(reflect.ValueOf(inst))
-
-	if fn, ok := fieldMap[f]; ok {
-		fname = fn
-	} else {
-		fname = f
-	}
-	fname = firstToUpper(fname)
-
-	rvInst := reflect.ValueOf(inst)
-	rviInst := reflect.Indirect(rvInst)
-	rtInst := rviInst.Type()
-	if rtInst.Kind() == reflect.Slice || rtInst.Kind() == reflect.Array {
-		rtInst = rtInst.Elem()
-		if rtInst.Kind() == reflect.Ptr {
-			rtInst = rtInst.Elem()
-		}
-	}
-
-	if rtInst.Kind() == reflect.Struct {
-		if sf, ok := rtInst.FieldByName(fname); ok {
-			ft := sf.Type
-			if ft.Kind() == reflect.Ptr {
-				ft = ft.Elem()
-			}
-
-			if ft.Kind() == reflect.Struct {
-				if ft == reflect.TypeOf(time.Time{}) || ft == reflect.TypeOf(Date{}) {
-					switch v.(type) {
-					case time.Time:
-						return Date(v.(time.Time))
-					case *time.Time:
-						return Date(*v.(*time.Time))
-					case Date, *Date:
-						return v
-					case string:
-						return map[string]interface{}{
-							"__type": "Date",
-							"iso":    v.(string),
-						}
-					}
-				} else {
-					var id string
-					var cname string
-					ftInst := reflect.Zero(ft)
-
-					if tmp, ok := ftInst.Interface().(iClassName); ok {
-						cname = tmp.ClassName()
-					} else if tmp, ok := reflect.New(ft).Interface().(iClassName); ok {
-						cname = tmp.ClassName()
-					} else {
-						cname = ft.Name()
-					}
-
-					rv := reflect.ValueOf(v)
-					rvi := reflect.Indirect(rv)
-					if rvi.Kind() == reflect.String {
-						id = rvi.Interface().(string)
-					} else if idf := rvi.FieldByName("Id"); idf.IsValid() {
-						id = idf.Interface().(string)
-					}
-
-					return Pointer{
-						Id:        id,
-						ClassName: cname,
-					}
-				}
-			}
-		}
-	}
-
-	return v
 }

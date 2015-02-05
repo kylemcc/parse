@@ -137,7 +137,7 @@ func NewUpdate(v interface{}) (Update, error) {
 }
 
 func (u *updateT) Set(f string, v interface{}) Update {
-	u.values[f] = updateOpT{UpdateType: opSet, Value: getQueryRepr(u.inst, f, v)}
+	u.values[f] = updateOpT{UpdateType: opSet, Value: encodeForRequest(v)}
 	return u
 }
 

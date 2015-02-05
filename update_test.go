@@ -43,10 +43,8 @@ func TestOperations(t *testing.T) {
 	}
 
 	u.Set("f1", "string")
-	u.Set("f2", "2014-12-20T18:31:19.123Z")
 	u.Set("f3", time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC))
 	u.Set("f4", User{Base: Base{Id: "abcd"}})
-	u.Set("f5", "efghi")
 	u.Set("f6_custom", true)
 	u.Increment("f7", 1)
 	u.Increment("f8", 2)
@@ -65,10 +63,6 @@ func TestOperations(t *testing.T) {
 
 	em := map[string]interface{}{
 		"f1": "string",
-		"f2": map[string]interface{}{
-			"__type": "Date",
-			"iso":    "2014-12-20T18:31:19.123Z",
-		},
 		"f3": map[string]interface{}{
 			"__type": "Date",
 			"iso":    "2014-12-20T18:31:19.123Z",
@@ -77,11 +71,6 @@ func TestOperations(t *testing.T) {
 			"__type":    "Pointer",
 			"className": "_User",
 			"objectId":  "abcd",
-		},
-		"f5": map[string]interface{}{
-			"__type":    "Pointer",
-			"className": "_User",
-			"objectId":  "efghi",
 		},
 		"f6_custom": true,
 		"f7": map[string]interface{}{
@@ -196,10 +185,10 @@ func TestExecuteUpdatesStruct(t *testing.T) {
 	}
 
 	u.Set("f1", "string")
-	u.Set("f2", "2014-12-20T18:31:19.123Z")
+	u.Set("f2", time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC))
 	u.Set("f3", time.Date(2014, 12, 20, 18, 31, 19, 123000000, time.UTC))
 	u.Set("f4", User{Base: Base{Id: "abcd"}})
-	u.Set("f5", "efghi")
+	u.Set("f5", User{Base: Base{Id: "efghi"}})
 	u.Set("f6_custom", true)
 	u.Increment("f7", 1)
 	u.Increment("f8", 2)

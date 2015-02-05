@@ -116,7 +116,6 @@ func TestFilters(t *testing.T) {
 	q.EqualTo("f1", "test")
 	q.EqualTo("f2", 1)
 	q.EqualTo("f3", time.Date(2014, 1, 14, 13, 37, 6, 120000000, time.UTC))
-	q.EqualTo("f4", "abcdefg")
 	q.EqualTo("f5", User{Base: Base{Id: "qrstuv"}})
 	q.NotEqualTo("f6", 7)
 	q.GreaterThan("f7", 3.2)
@@ -160,11 +159,6 @@ func TestFilters(t *testing.T) {
 		"f3": map[string]interface{}{
 			"__type": "Date",
 			"iso":    "2014-01-14T13:37:06.120Z",
-		},
-		"f4": map[string]interface{}{
-			"__type":    "Pointer",
-			"className": "_User",
-			"objectId":  "abcdefg",
 		},
 		"f5": map[string]interface{}{
 			"__type":    "Pointer",
@@ -663,14 +657,13 @@ func TestEach(t *testing.T) {
 }
 
 func TestGetQueryRepr(t *testing.T) {
-	s := &struct {
+	_ = &struct {
 		F1 string
 		F2 int
 		F3 float32
 		F4 bool
 		F5 time.Time
-		F6 time.Time
-		F7 *User
+		F6 *User
 	}{}
 
 	cases := []struct {
@@ -688,14 +681,6 @@ func TestGetQueryRepr(t *testing.T) {
 			Date(time.Date(2014, 12, 19, 16, 47, 23, 120000000, time.UTC)),
 		},
 		{
-			"2014-12-19T16:47:23.120Z",
-			"f6",
-			map[string]interface{}{
-				"iso":    "2014-12-19T16:47:23.120Z",
-				"__type": "Date",
-			},
-		},
-		{
 			&User{Base: Base{Id: "abc"}},
 			"f7",
 			Pointer{
@@ -706,9 +691,9 @@ func TestGetQueryRepr(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := getQueryRepr(s, c.fname, c.v)
+		actual := encodeForRequest(c.v)
 		if !reflect.DeepEqual(actual, c.expected) {
-			t.Errorf("getQueryRepr did not return expected value. Got: [%v] expected [%v]\n", actual, c.expected)
+			t.Errorf("getQueryRepr did not return expected value for field [%v]. Got: [%v] expected [%v]\n", c.fname, actual, c.expected)
 		}
 	}
 }

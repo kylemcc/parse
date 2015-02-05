@@ -518,3 +518,57 @@ func RegisterType(t interface{}) error {
 	registeredTypes[className] = rvi.Type()
 	return nil
 }
+
+// Transform the given value into the proper representation for Marshaling as part
+// of a request
+//
+// E.g. A struct is turned into a Pointer type, a time.Time is turned into a Date
+func encodeForRequest(v interface{}) interface{} {
+	rv := reflect.ValueOf(v)
+	rvi := reflect.Indirect(rv)
+	rt := rvi.Type()
+	if rt.Kind() == reflect.Struct {
+		switch v.(type) {
+		case time.Time, *time.Time, Date, *Date:
+			switch v.(type) {
+			case time.Time:
+				return Date(v.(time.Time))
+			case *time.Time:
+				return Date(*v.(*time.Time))
+			case Date, *Date:
+				return v
+			case string:
+				return map[string]interface{}{
+					"__type": "Date",
+					"iso":    v.(string),
+				}
+			}
+		case Pointer, *Pointer:
+			return v
+		case GeoPoint, *GeoPoint:
+			return v
+		case ACL, *ACL:
+			return v
+		default:
+			var cname string
+
+			if tmp, ok := reflect.Zero(rvi.Type()).Interface().(iClassName); ok {
+				cname = tmp.ClassName()
+			} else if tmp, ok := reflect.New(rvi.Type()).Interface().(iClassName); ok {
+				cname = tmp.ClassName()
+			} else {
+				cname = rt.Name()
+			}
+
+			if idf := rvi.FieldByName("Id"); idf.IsValid() {
+				id := idf.Interface().(string)
+				return Pointer{
+					Id:        id,
+					ClassName: cname,
+				}
+			}
+		}
+	}
+
+	return v
+}

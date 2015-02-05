@@ -278,3 +278,52 @@ func TestRegisterType(t *testing.T) {
 		t.Errorf("Expected F2 to be of type *CustType2, got: %v\n", reflect.TypeOf(tt.F1))
 	}
 }
+
+func TestPopulateAcl(t *testing.T) {
+	body := `{"ACL":{"*":{"read":true},"abc":{"read":true},"def":{"read":true,"write":true},"role:xyz":{"read":true}}}`
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, body)
+	})
+	defer teardownTestServer()
+
+	s := struct {
+		Base
+	}{}
+	q, _ := NewQuery(&s)
+	if err := q.Get("blah"); err != nil {
+		t.Errorf("Unexpected error on Get: %v\n", err)
+		t.FailNow()
+	}
+
+	aclJson, err := json.Marshal(s.ACL)
+	if err != nil {
+		t.Errorf("Unexpected error on marshaling ACL: %v\n", err)
+		t.FailNow()
+	}
+
+	expected := map[string]interface{}{
+		"*": map[string]interface{}{
+			"read": true,
+		},
+		"abc": map[string]interface{}{
+			"read": true,
+		},
+		"def": map[string]interface{}{
+			"read":  true,
+			"write": true,
+		},
+		"role:xyz": map[string]interface{}{
+			"read": true,
+		},
+	}
+
+	actual := map[string]interface{}{}
+	if err := json.Unmarshal(aclJson, &actual); err != nil {
+		t.Errorf("Unexpected err unmarshaling ACL: %v\n", err)
+		t.FailNow()
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("Acl was different from expected. Got[%v] Expected[%v]\n", actual, expected)
+	}
+}

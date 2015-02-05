@@ -413,7 +413,35 @@ func populateValue(dst interface{}, src interface{}) (err error) {
 			return fmt.Errorf("expected map, got %s", svi.Kind())
 		}
 	case reflect.Interface:
-		if m, ok := src.(map[string]interface{}); ok {
+		if _, ok := dst.(*ACL); ok {
+			if a, ok := src.(map[string]interface{}); ok {
+				acl := aclT{
+					read:  map[string]bool{},
+					write: map[string]bool{},
+				}
+				for ak, av := range a {
+					avm := av.(map[string]interface{})
+					if ak == "*" {
+						if r, ok := avm["read"]; ok && r.(bool) {
+							acl.publicReadAccess = true
+						}
+						if w, ok := avm["write"]; ok && w.(bool) {
+							acl.publicWriteAccess = true
+						}
+					} else {
+						if r, ok := avm["read"]; ok && r.(bool) {
+							acl.read[ak] = true
+						}
+						if w, ok := avm["write"]; ok && w.(bool) {
+							acl.write[ak] = true
+						}
+					}
+				}
+				dvi.Set(reflect.ValueOf(&acl))
+			} else {
+				return fmt.Errorf("can not set field ACL - expected type map[string]interface{} - got: %v", reflect.TypeOf(src))
+			}
+		} else if m, ok := src.(map[string]interface{}); ok {
 			if c, ok := m["className"]; ok {
 				if t, ok := registeredTypes[c.(string)]; ok {
 					tv := reflect.New(t)

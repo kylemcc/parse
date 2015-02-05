@@ -278,7 +278,11 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 func populateValue(dst interface{}, src interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = r.(error)
+			if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("error populating struct: %v", r)
+			}
 		}
 	}()
 

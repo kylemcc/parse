@@ -83,7 +83,6 @@ func main() {
 - Roles
 - Cloud Functions
 - Background Jobs
-- Push Notifications
 - Analytics
 - File upload/retrieval
 - Batch operations

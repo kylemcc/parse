@@ -524,6 +524,10 @@ func RegisterType(t interface{}) error {
 //
 // E.g. A struct is turned into a Pointer type, a time.Time is turned into a Date
 func encodeForRequest(v interface{}) interface{} {
+	if v == nil {
+		return nil
+	}
+
 	rv := reflect.ValueOf(v)
 	rvi := reflect.Indirect(rv)
 	rt := rvi.Type()

@@ -24,6 +24,7 @@ const (
 
 var parseHost = "api.parse.com"
 var fieldNameCache map[reflect.Type]map[string]string = make(map[reflect.Type]map[string]string)
+var fieldCache = make(map[reflect.Type]reflect.StructField)
 
 type requestT interface {
 	method() string
@@ -216,7 +217,7 @@ func handleResponse(body []byte, dst interface{}) error {
 	}
 }
 
-func getFields(t reflect.Type, recurse bool) []reflect.StructField {
+func getFields(t reflect.Type) []reflect.StructField {
 	fields := make([]reflect.StructField, 0)
 
 	if t.Kind() == reflect.Ptr {
@@ -231,8 +232,8 @@ func getFields(t reflect.Type, recurse bool) []reflect.StructField {
 		}
 		switch ft.Kind() {
 		case reflect.Struct:
-			if recurse {
-				fields = append(fields, getFields(ft, recurse)...)
+			if f.Anonymous {
+				fields = append(fields, getFields(ft)...)
 			}
 			if len(f.PkgPath) == 0 {
 				fields = append(fields, f)
@@ -262,7 +263,7 @@ func getFieldNameMap(v reflect.Value) map[string]string {
 		return f
 	}
 
-	fields := getFields(t, true)
+	fields := getFields(t)
 
 	fieldMap := make(map[string]string)
 	for _, f := range fields {

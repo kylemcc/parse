@@ -33,7 +33,7 @@ func (c *createT) body() (string, error) {
 	rv := reflect.ValueOf(c.v)
 	rvi := reflect.Indirect(rv)
 	rt := rvi.Type()
-	fields := getFields(rt, false)
+	fields := getFields(rt)
 
 	for _, f := range fields {
 		var name string

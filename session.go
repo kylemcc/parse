@@ -1,9 +1,14 @@
 package parse
 
-import "net/url"
+import (
+	"encoding/json"
+	"errors"
+	"net/url"
+	"reflect"
+)
 
 type Session interface {
-	User() *User
+	User() interface{}
 	NewQuery(v interface{}) (Query, error)
 	NewUpdate(v interface{}) (Update, error)
 	Create(v interface{}) error
@@ -17,32 +22,58 @@ type loginRequestT struct {
 }
 
 type sessionT struct {
-	user         *User
+	user         interface{}
 	sessionToken string
 }
 
-func Login(username, password string) (Session, error) {
-	s := &sessionT{user: &User{}}
-	if b, err := defaultClient.doRequest(&loginRequestT{username: username, password: password}); err != nil {
+// Login in as the user identified by the provided username and password.
+//
+// Optionally provide a custom User type to use in place of parse.User. If u is not
+// nil, it will be populated with the user's attributes, and will be accessible
+// by calling session.User().
+func Login(username, password string, u interface{}) (Session, error) {
+	var user interface{}
+
+	if u == nil {
+		user = &User{}
+	} else if err := validateUser(u); err != nil {
 		return nil, err
-	} else if err := handleResponse(b, s.user); err != nil {
-		return nil, err
+	} else {
+		user = u
 	}
 
-	if st, ok := s.user.Extra["SessionToken"]; ok {
-		if stStr, ok := st.(string); ok {
-			s.sessionToken = stStr
-		}
+	s := &sessionT{user: user}
+	if b, err := defaultClient.doRequest(&loginRequestT{username: username, password: password}); err != nil {
+		return nil, err
+	} else if st, err := handleLoginResponse(b, s.user); err != nil {
+		return nil, err
+	} else {
+		s.sessionToken = st
 	}
+
 	return s, nil
 }
 
 // Log in as the user identified by the session token st
-func Become(st string) (Session, error) {
+//
+// Optionally provide a custom User type to use in place of parse.User. If user is
+// not nil, it will be populated with the user's attributes, and will be accessible
+// by calling session.User().
+func Become(st string, u interface{}) (Session, error) {
+	var user interface{}
+
+	if u == nil {
+		user = &User{}
+	} else if err := validateUser(u); err != nil {
+		return nil, err
+	} else {
+		user = u
+	}
+
 	r := &loginRequestT{
 		s: &sessionT{
 			sessionToken: st,
-			user:         &User{},
+			user:         user,
 		},
 	}
 
@@ -54,7 +85,7 @@ func Become(st string) (Session, error) {
 	return r.s, nil
 }
 
-func (s *sessionT) User() *User {
+func (s *sessionT) User() interface{} {
 	return s.user
 }
 
@@ -122,4 +153,27 @@ func (s *loginRequestT) session() *sessionT {
 
 func (s *loginRequestT) contentType() string {
 	return "application/x-www-form-urlencoded"
+}
+
+func validateUser(u interface{}) error {
+	rv := reflect.ValueOf(u)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return errors.New("u must be a non-nil pointer")
+	} else if getClassName(u) != "_User" {
+		return errors.New("u must embed parse.User or implement a ClassName function that returns \"_User\"")
+	}
+	return nil
+}
+
+func handleLoginResponse(body []byte, dst interface{}) (sessionToken string, err error) {
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(body, &data); err != nil {
+		return "", err
+	}
+
+	st, ok := data["sessionToken"]
+	if !ok {
+		return "", errors.New("response did not contain sessionToken")
+	}
+	return st.(string), populateValue(dst, data)
 }

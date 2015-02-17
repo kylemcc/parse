@@ -23,7 +23,7 @@ func TestLogin(t *testing.T) {
 	})
 	defer teardownTestServer()
 
-	s, err := Login("username", "password")
+	s, err := Login("username", "password", nil)
 	if err != nil {
 		t.Errorf("unexpected error on login: %v\n", err)
 		t.FailNow()
@@ -44,6 +44,59 @@ func TestLogin(t *testing.T) {
 				"SessionToken": "abcd",
 			},
 		},
+	}
+
+	if !reflect.DeepEqual(u, expectedUser) {
+		t.Errorf("login did not return correct user. Got:\n[%+v]\nexpected:\n[%+v]\n", u, expectedUser)
+	}
+}
+
+type CustomUser struct {
+	User
+	Phone string
+	City  string
+}
+
+func TestLoginCustomUserType(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		if r.Form.Get("username") != "username" {
+			t.Errorf("login request did not include proper username. got [%v] expected [%v]\n", r.Form.Get("username"), "username")
+		}
+
+		if r.Form.Get("password") != "password" {
+			t.Errorf("login request did not include proper password. got [%v] expected [%v]\n", r.Form.Get("password"), "password")
+		}
+
+		fmt.Fprintf(w, `{"sessionToken":"abcd","username":"kylemcc@gmail.com","createdAt":"2014-04-01T14:44:14.123Z","updatedAt":"2014-12-01T12:34:56.789Z","phone":"3105551234","city":"Santa Monica"}`)
+	})
+	defer teardownTestServer()
+
+	s, err := Login("username", "password", &CustomUser{})
+	if err != nil {
+		t.Errorf("unexpected error on login: %v\n", err)
+		t.FailNow()
+	}
+
+	st := s.(*sessionT)
+	if st.sessionToken != "abcd" {
+		t.Errorf("login did not set a proper session token. got: [%v] expected: [%v]\n", st.sessionToken, "abcd")
+	}
+
+	u := s.User()
+	expectedUser := &CustomUser{
+		User: User{
+			Username: "kylemcc@gmail.com",
+			Base: Base{
+				CreatedAt: time.Date(2014, 4, 1, 14, 44, 14, 123000000, time.UTC),
+				UpdatedAt: time.Date(2014, 12, 1, 12, 34, 56, 789000000, time.UTC),
+				Extra: map[string]interface{}{
+					"SessionToken": "abcd",
+				},
+			},
+		},
+		Phone: "3105551234",
+		City:  "Santa Monica",
 	}
 
 	if !reflect.DeepEqual(u, expectedUser) {

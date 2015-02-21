@@ -42,12 +42,20 @@ type ParseError interface {
 }
 
 type parseErrorT struct {
-	Code    int    `json:"code" parse:"code"`
-	Message string `json:"error" parse:"error"`
+	ErrorCode    int    `json:"code" parse:"code"`
+	ErrorMessage string `json:"error" parse:"error"`
 }
 
 func (e *parseErrorT) Error() string {
-	return fmt.Sprintf("error %d - %s", e.Code, e.Message)
+	return fmt.Sprintf("error %d - %s", e.ErrorCode, e.ErrorMessage)
+}
+
+func (e *parseErrorT) Code() int {
+	return e.ErrorCode
+}
+
+func (e *parseErrorT) Message() string {
+	return e.ErrorMessage
 }
 
 type clientT struct {
@@ -439,6 +447,8 @@ func populateValue(dst interface{}, src interface{}) (err error) {
 					}
 				}
 				dvi.Set(reflect.ValueOf(&acl))
+			} else if _, ok := src.(ACL); ok {
+				dvi.Set(sv)
 			} else {
 				return fmt.Errorf("can not set field ACL - expected type map[string]interface{} - got: %v", reflect.TypeOf(src))
 			}

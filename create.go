@@ -11,6 +11,10 @@ type createT struct {
 	v                  interface{}
 	shouldUseMasterKey bool
 	currentSession     *sessionT
+
+	isUser   bool
+	username string
+	password string
 }
 
 func (c *createT) method() string {
@@ -29,6 +33,11 @@ func (c *createT) endpoint() (string, error) {
 
 func (c *createT) body() (string, error) {
 	payload := map[string]interface{}{}
+
+	if c.isUser {
+		payload["username"] = c.username
+		payload["password"] = c.password
+	}
 
 	rv := reflect.ValueOf(c.v)
 	rvi := reflect.Indirect(rv)
@@ -89,6 +98,20 @@ func (c *createT) contentType() string {
 // or that implements the ClassName method
 func Create(v interface{}, useMasterKey bool) error {
 	return create(v, useMasterKey, nil)
+}
+
+func Signup(username string, password string, user interface{}) error {
+	cr := &createT{
+		v:                  user,
+		shouldUseMasterKey: false,
+		currentSession:     nil,
+		isUser:             true,
+	}
+	if b, err := defaultClient.doRequest(cr); err != nil {
+		return err
+	} else {
+		return handleResponse(b, user)
+	}
 }
 
 func create(v interface{}, useMasterKey bool, currentSession *sessionT) error {

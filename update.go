@@ -297,3 +297,14 @@ func (u *updateT) session() *sessionT {
 func (u *updateT) contentType() string {
 	return "application/json"
 }
+
+func LinkFacebookAccount(u *User, a *FacebookAuthData) error {
+	if u.Id == "" {
+		return errors.New("user Id field must not be empty")
+	}
+
+	up, _ := NewUpdate(u)
+	up.Set("authData", AuthData{Facebook: a})
+	up.UseMasterKey()
+	return up.Execute()
+}

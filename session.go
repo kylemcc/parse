@@ -19,6 +19,7 @@ type loginRequestT struct {
 	username string
 	password string
 	s        *sessionT
+	authdata *AuthData
 }
 
 type sessionT struct {
@@ -44,6 +45,29 @@ func Login(username, password string, u interface{}) (Session, error) {
 
 	s := &sessionT{user: user}
 	if b, err := defaultClient.doRequest(&loginRequestT{username: username, password: password}); err != nil {
+		return nil, err
+	} else if st, err := handleLoginResponse(b, s.user); err != nil {
+		return nil, err
+	} else {
+		s.sessionToken = st
+	}
+
+	return s, nil
+}
+
+func LoginFacebook(authData *FacebookAuthData, u interface{}) (Session, error) {
+	var user interface{}
+
+	if u == nil {
+		user = &User{}
+	} else if err := validateUser(u); err != nil {
+		return nil, err
+	} else {
+		user = u
+	}
+
+	s := &sessionT{user: user}
+	if b, err := defaultClient.doRequest(&loginRequestT{authdata: &AuthData{Facebook: authData}}); err != nil {
 		return nil, err
 	} else if st, err := handleLoginResponse(b, s.user); err != nil {
 		return nil, err
@@ -118,6 +142,10 @@ func (s *sessionT) Delete(v interface{}) error {
 }
 
 func (s *loginRequestT) method() string {
+	if s.authdata != nil {
+		return "POST"
+	}
+
 	return "GET"
 }
 
@@ -127,19 +155,27 @@ func (s *loginRequestT) endpoint() (string, error) {
 	u.Host = parseHost
 	if s.s != nil {
 		u.Path = "/1/users/me"
+	} else if s.authdata != nil {
+		u.Path = "/1/users"
 	} else {
 		u.Path = "/1/login"
 	}
 
-	v := url.Values{}
-	v["username"] = []string{s.username}
-	v["password"] = []string{s.password}
-	u.RawQuery = v.Encode()
+	if s.username != "" && s.password != "" {
+		v := url.Values{}
+		v["username"] = []string{s.username}
+		v["password"] = []string{s.password}
+		u.RawQuery = v.Encode()
+	}
 
 	return u.String(), nil
 }
 
 func (s *loginRequestT) body() (string, error) {
+	if s.authdata != nil {
+		b, err := json.Marshal(map[string]interface{}{"authData": s.authdata})
+		return string(b), err
+	}
 	return "", nil
 }
 

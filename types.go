@@ -49,6 +49,58 @@ type Base struct {
 	Extra     map[string]interface{} `parse:"-"`
 }
 
+type AnonymousAuthData struct {
+	Id string `json:"id"`
+}
+
+type TwitterAuthData struct {
+	Id              string `json:"id"`
+	ScreenName      string `json:"screen_name" parse:"screen_name"`
+	ConsumerKey     string `json:"consumer_key" parse:"consumer_key"`
+	ConsumerSecret  string `json:"consumer_secret" parse:"consumer_secret"`
+	AuthToken       string `json:"auth_token" parse:"auth_token"`
+	AuthTokenSecret string `json:"auth_token_secret" parse:"auth_token_secret"`
+}
+
+type FacebookAuthData struct {
+	Id             string
+	AccessToken    string    `parse:"access_token"`
+	ExpirationDate time.Time `parse:"expiration_date"`
+}
+
+func (a *FacebookAuthData) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Id             string `json:"id"`
+		AccessToken    string `json:"access_token" parse:"access_token"`
+		ExpirationDate string `json:"expiration_date"`
+	}{
+		a.Id, a.AccessToken, a.ExpirationDate.Format("2006-01-02T15:04:05.000Z"),
+	})
+}
+
+func (a *FacebookAuthData) UnmarshalJSON(b []byte) (err error) {
+	data := struct {
+		Id             string `json:"id"`
+		AccessToken    string `json:"access_token" parse:"access_token"`
+		ExpirationDate string `json:"expiration_date"`
+	}{}
+
+	if err := json.Unmarshal(b, &data); err != nil {
+		return err
+	}
+
+	a.Id = data.Id
+	a.AccessToken = data.AccessToken
+	a.ExpirationDate, err = time.Parse("2006-01-02T15:04:05.000Z", data.ExpirationDate)
+	return err
+}
+
+type AuthData struct {
+	Twitter   *TwitterAuthData   `json:"twitter,omitempty"`
+	Facebook  *FacebookAuthData  `json:"facebook,omitempty"`
+	Anonymous *AnonymousAuthData `json:"anonymous,omitempty"`
+}
+
 // Represents the built-in Parse "User" class. Embed this type in a custom
 // type containing any custom fields. When fetching user objects, any retrieved
 // fields with no matching struct field will be stored in User.Extra (map[string]interface{})
@@ -553,6 +605,9 @@ func encodeForRequest(v interface{}) interface{} {
 			return v
 		case ACL, *ACL:
 			return v
+		case AuthData, *AuthData:
+			b, _ := json.Marshal(v)
+			return string(b)
 		default:
 			var cname string
 

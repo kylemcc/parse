@@ -151,6 +151,9 @@ type Query interface {
 	// returned by the Parse query q
 	DoesNotMatchQuery(f string, q Query) Query
 
+	// Convenience method for building a subquery for use with Query.Or
+	Sub() Query
+
 	// Constructs a query where each result must satisfy one of the given
 	// subueries
 	//
@@ -158,14 +161,11 @@ type Query interface {
 	//
 	// q, _ := parse.NewQuery(&parse.User{})
 	//
-	// sq1, _ := parse.NewQuery(&parse.User{})
-	// sq1.EqualTo("city", "Chicago")
+	// sq1 := q.Sub().EqualTo("city", "Chicago")
 	//
-	// sq2, _ := parse.NewQuery(&parse.User{})
-	// sq2.GreaterThan("age", 30)
+	// sq2 := q.Sub().GreaterThan("age", 30)
 	//
-	// sq3, _ := parse.NewQuery(&parse.User{})
-	// sq3.In("occupation", []string{"engineer", "developer"})
+	// sq3 := q.Sub().In("occupation", []string{"engineer", "developer"})
 	//
 	// q.Or(sq1, sq2, sq3)
 	// q.Each(...)
@@ -635,6 +635,11 @@ func (q *queryT) DoesNotMatchQuery(f string, sq Query) Query {
 		"$notInQuery": sq,
 	}
 	return q
+}
+
+func (q *queryT) Sub() Query {
+	q2, _ := NewQuery(q.inst)
+	return q2
 }
 
 func (q *queryT) Or(qs ...Query) Query {

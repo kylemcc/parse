@@ -174,7 +174,11 @@ func (u *updateT) SetACL(a ACL) Update {
 func (u *updateT) Execute() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = r.(error)
+			if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("error executing update: %v", r)
+			}
 		}
 	}()
 

@@ -200,9 +200,17 @@ func (u *updateT) Execute() (err error) {
 
 			switch v.UpdateType {
 			case opSet:
+				if fv.Kind() == reflect.Ptr && fv.IsNil() && v.Value != nil {
+					fv.Set(reflect.New(fv.Type().Elem()))
+				}
+
 				var tmp reflect.Value
 				if fv.Kind() == reflect.Ptr {
-					tmp = fv
+					if v.Value == nil {
+						tmp = fv.Addr()
+					} else {
+						tmp = fv
+					}
 				} else {
 					tmp = fv.Addr()
 				}

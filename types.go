@@ -108,7 +108,7 @@ type User struct {
 	Base
 	Username      string
 	Email         string
-	EmailVerified bool
+	EmailVerified bool `json:"-" parse:"-"`
 }
 
 func (u *User) ClassName() string {

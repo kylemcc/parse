@@ -242,8 +242,7 @@ func getFields(t reflect.Type) []reflect.StructField {
 		case reflect.Struct:
 			if f.Anonymous {
 				fields = append(fields, getFields(ft)...)
-			}
-			if len(f.PkgPath) == 0 {
+			} else if len(f.PkgPath) == 0 {
 				fields = append(fields, f)
 			}
 		default:

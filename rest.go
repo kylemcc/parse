@@ -123,6 +123,15 @@ func SetRateLimit(limit, burst uint) error {
 	return nil
 }
 
+func SetHTTPClient(c *http.Client) error {
+	if defaultClient == nil {
+		return errors.New("parse.Initialize must be called before parse.SetHTTPTimeout")
+	}
+
+	defaultClient.httpClient = c
+	return nil
+}
+
 func (c *clientT) doRequest(op requestT) ([]byte, error) {
 	ep, err := op.endpoint()
 	if err != nil {

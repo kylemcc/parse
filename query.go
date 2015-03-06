@@ -151,6 +151,9 @@ type Query interface {
 	// returned by the Parse query q
 	DoesNotMatchQuery(f string, q Query) Query
 
+	// Convenience method for duplicating a query
+	Clone() Query
+
 	// Convenience method for building a subquery for use with Query.Or
 	Sub() Query
 
@@ -635,6 +638,55 @@ func (q *queryT) DoesNotMatchQuery(f string, sq Query) Query {
 		"$notInQuery": sq,
 	}
 	return q
+}
+
+func (q *queryT) Clone() Query {
+	nq := queryT{
+		inst:               q.inst,
+		op:                 q.op,
+		instId:             q.instId,
+		currentSession:     q.currentSession,
+		shouldUseMasterKey: q.shouldUseMasterKey,
+		className:          q.className,
+	}
+
+	if q.limit != nil {
+		nq.limit = new(int)
+		*nq.limit = *q.limit
+	}
+
+	if q.skip != nil {
+		nq.skip = new(int)
+		*nq.skip = *q.skip
+	}
+
+	if q.count != nil {
+		nq.count = new(int)
+		*nq.count = *q.count
+	}
+
+	if q.where != nil {
+		nq.where = map[string]interface{}{}
+		for k, v := range q.where {
+			nq.where[k] = v
+		}
+	}
+
+	if q.include != nil {
+		nq.include = map[string]struct{}{}
+		for k, v := range q.include {
+			nq.include[k] = v
+		}
+	}
+
+	if q.keys != nil {
+		nq.keys = map[string]struct{}{}
+		for k, v := range q.keys {
+			nq.keys[k] = v
+		}
+	}
+
+	return &nq
 }
 
 func (q *queryT) Sub() Query {

@@ -765,11 +765,20 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 			}
 
 			for i := 0; i < s.Elem().Len(); i++ {
-				select {
-				case <-cancel:
+				cases := []reflect.SelectCase{
+					reflect.SelectCase{
+						Dir:  reflect.SelectRecv,
+						Chan: reflect.ValueOf(cancel),
+					},
+					reflect.SelectCase{
+						Dir:  reflect.SelectSend,
+						Chan: rv,
+						Send: s.Elem().Index(i),
+					},
+				}
+				_case, _, _ := reflect.Select(cases)
+				if _case == 0 {
 					break loop
-				default:
-					rv.Send(s.Elem().Index(i))
 				}
 			}
 

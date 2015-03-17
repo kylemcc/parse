@@ -470,6 +470,14 @@ func populateValue(dst interface{}, src interface{}) (err error) {
 					dvi.Set(tv)
 					return nil
 				}
+			} else if t, ok := m["__type"]; ok && t == "File" {
+				f := File{}
+				if err := populateValue(&f, m); err != nil {
+					return err
+				}
+				fmt.Printf("file [%#+v]\n", f)
+				dvi.Set(reflect.ValueOf(&f))
+				return nil
 			}
 		}
 		fallthrough

@@ -392,6 +392,8 @@ func (g *GeoPoint) UnmarshalJSON(b []byte) error {
 
 // Represents the Parse File type
 type File struct {
+	Name string `json:"name"`
+	Url  string `json:"url"`
 }
 
 // Represents a Parse Pointer type. When querying, creating, or updating

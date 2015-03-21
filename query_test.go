@@ -611,9 +611,8 @@ func TestEach(t *testing.T) {
 	}
 
 	rc := make(chan *User)
-	ec := make(chan error)
 
-	err = q.Each(rc, ec, nil)
+	it, err := q.Each(rc)
 	if err != nil {
 		t.Errorf("Unexpected error executing each: %v\n", err)
 		t.FailNow()
@@ -621,25 +620,18 @@ func TestEach(t *testing.T) {
 
 	users := make([]*User, 0)
 	errors := make([]error, 0)
+loop:
 	for {
 		select {
-		case u, ok := <-rc:
-			if !ok {
-				rc = nil
-			}
+		case u := <-rc:
 			if u != nil {
 				users = append(users, u)
 			}
-		case err, ok := <-ec:
-			if !ok {
-				ec = nil
-			}
+		case err := <-it.Done():
 			if err != nil {
 				errors = append(errors, err)
 			}
-		}
-		if rc == nil && ec == nil {
-			break
+			break loop
 		}
 	}
 

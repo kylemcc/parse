@@ -184,7 +184,7 @@ type Query interface {
 	// The third argument is a channel which may be used for cancelling
 	// iteration. Simply send an empty struct value to the channel,
 	// and iteration will discontinue. This argument may be nil.
-	Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) error
+	Each(rc interface{}) (*Iterator, error)
 
 	// Retrieves a list of objects that satisfy the given query. The results
 	// are assigned to the slice provided to NewQuery.
@@ -707,21 +707,21 @@ func (q *queryT) Or(qs ...Query) Query {
 
 var chanInterfaceType = reflect.TypeOf(make(chan interface{}, 0))
 
-func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) error {
+func (q *queryT) Each(rc interface{}) (*Iterator, error) {
 	instType := reflect.TypeOf(q.inst)
 	rv := reflect.ValueOf(rc)
 	rt := rv.Type()
 	if rt.Kind() != reflect.Chan {
-		return fmt.Errorf("rc must be a channel, received %s", rt.Kind())
+		return nil, fmt.Errorf("rc must be a channel, received %s", rt.Kind())
 	}
 
 	if rt.Elem().Kind() == reflect.Ptr {
 		if rt.Elem() != instType && rt != chanInterfaceType {
-			return fmt.Errorf("1rc must be of type chan %s, received chan %s", instType, rt.Elem())
+			return nil, fmt.Errorf("1rc must be of type chan %s, received chan %s", instType, rt.Elem())
 		}
 	} else {
 		if rt.Elem() != instType.Elem() && rt != chanInterfaceType {
-			return fmt.Errorf("2rc must be of type chan %s, received chan %s", instType.Elem(), rt.Elem())
+			return nil, fmt.Errorf("2rc must be of type chan %s, received chan %s", instType.Elem(), rt.Elem())
 		}
 	}
 
@@ -730,23 +730,45 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 	}
 
 	if q.limit != nil || q.skip != nil || len(q.orderBy) > 0 {
-		return errors.New("cannot iterate over a query with a sort, limit, or skip")
+		return nil, errors.New("cannot iterate over a query with a sort, limit, or skip")
 	}
 
 	q.OrderBy("objectId")
 	q.Limit(100)
 
+	i := newIterator()
+
 	go func() {
+		defer func() {
+			rv.Close()
+			close(i.resChan)
+			i.iterating = false
+		}()
+
+		i.iterating = true
+
 		var sliceType reflect.Type
 		if rt == chanInterfaceType {
 			sliceType = reflect.SliceOf(instType)
 		} else {
 			sliceType = reflect.SliceOf(rt.Elem())
 		}
+
+		crv := reflect.ValueOf(i.cancel)
+		selectCases := []reflect.SelectCase{
+			reflect.SelectCase{
+				Dir:  reflect.SelectRecv,
+				Chan: crv,
+			},
+			reflect.SelectCase{
+				Dir:  reflect.SelectSend,
+				Chan: rv,
+			},
+		}
 	loop:
 		for {
 			select {
-			case <-cancel:
+			case <-i.cancel:
 				break loop
 			default:
 			}
@@ -757,26 +779,20 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 			// TODO: handle errors and retry if possible
 			b, err := defaultClient.doRequest(q)
 			if err != nil {
-				ec <- err
+				i.err = err
+				i.resChan <- err
+				return
 			}
 
 			if err := handleResponse(b, s.Interface()); err != nil && err != ErrNoRows {
-				ec <- err
+				i.err = err
+				i.resChan <- err
+				return
 			}
 
 			for i := 0; i < s.Elem().Len(); i++ {
-				cases := []reflect.SelectCase{
-					reflect.SelectCase{
-						Dir:  reflect.SelectRecv,
-						Chan: reflect.ValueOf(cancel),
-					},
-					reflect.SelectCase{
-						Dir:  reflect.SelectSend,
-						Chan: rv,
-						Send: s.Elem().Index(i),
-					},
-				}
-				_case, _, _ := reflect.Select(cases)
+				selectCases[1].Send = s.Elem().Index(i)
+				_case, _, _ := reflect.Select(selectCases)
 				if _case == 0 {
 					break loop
 				}
@@ -795,11 +811,10 @@ func (q *queryT) Each(rc interface{}, ec chan<- error, cancel <-chan struct{}) e
 
 			}
 		}
-		rv.Close()
-		close(ec)
+		i.resChan <- nil
 	}()
 
-	return nil
+	return i, nil
 }
 
 func (q *queryT) Find() error {
@@ -989,4 +1004,39 @@ func (q *queryT) MarshalJSON() ([]byte, error) {
 // value that matches it. MongoDb (what backs Parse) uses PCRE syntax
 func quote(re string) string {
 	return "\\Q" + strings.Replace(re, "\\E", "\\E\\\\E\\Q", -1) + "\\E"
+}
+
+//
+type Iterator struct {
+	err       error
+	iterating bool
+	cancel    chan int
+	resChan   chan error
+}
+
+func newIterator() *Iterator {
+	return &Iterator{
+		cancel:  make(chan int, 1),
+		resChan: make(chan error, 1),
+	}
+}
+
+// Returns the terminal error value of the iteration process, or nil if
+// the iteration process exited normally (or hasn't started yet)
+func (i *Iterator) Error() error {
+	return i.err
+}
+
+// Cancel interating over the current query. This is a no-op if iteration has
+// already terminated
+func (i *Iterator) Cancel() {
+	if i.iterating {
+		i.cancel <- 1
+	}
+}
+
+// Returns a channel that is closed once iteration is finished. Any error causing
+// iteration to terminate prematurely will be available on this channel.
+func (i *Iterator) Done() <-chan error {
+	return i.resChan
 }

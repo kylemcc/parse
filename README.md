@@ -45,29 +45,25 @@ func main() {
 
 	q2, _ := parse.NewQuery(&parse.User{})
 	q2.GreaterThan("createdAt", time.Date(2014, 01, 01, 0, 0, 0, 0, time.UTC))
+
 	rc := make(chan *parse.User)
-	ec := make(chan error)
 
 	// .Each will retrieve all results for a query and send them to the provided channel
-	q2.Each(rc, ec, nil)
-	for {
-		select {
-		case u, ok := <-rc:
-			if ok {
-				fmt.Printf("received user: %v\n", u)
-			} else {
-				rc = nil
-			}
-		case err, ok := <-ec:
-			if ok {
-				fmt.Printf("error: %v\n", err)
-			} else {
-				ec = nil
-			}
+	// The iterator returned allows for early cancelation of the iteration process, and
+	// stores any error that triggers early termination
+	iterator, err := q2.Each(rc)
+	for u := range rc{
+		fmt.Printf("received user: %v\n", u)
+		// Do something
+		if err := process(u); err != nil {
+			// Cancel if there was an error
+			iterator.Cancel()
 		}
-		if rc == nil && ec == nil {
-			break
-		}
+	}
+
+	// An error occurred - not all rows were processed
+	if it.Error() != nil {
+		panic(it.Error())
 	}
 }
 ```

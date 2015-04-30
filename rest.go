@@ -475,7 +475,6 @@ func populateValue(dst interface{}, src interface{}) (err error) {
 				if err := populateValue(&f, m); err != nil {
 					return err
 				}
-				fmt.Printf("file [%#+v]\n", f)
 				dvi.Set(reflect.ValueOf(&f))
 				return nil
 			}

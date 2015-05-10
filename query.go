@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -1009,6 +1010,7 @@ func quote(re string) string {
 //
 type Iterator struct {
 	err       error
+	mu        sync.Mutex
 	iterating bool
 	cancel    chan int
 	resChan   chan error
@@ -1030,7 +1032,20 @@ func (i *Iterator) Error() error {
 // Cancel interating over the current query. This is a no-op if iteration has
 // already terminated
 func (i *Iterator) Cancel() {
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	if i.iterating {
+		i.cancel <- 1
+	}
+}
+
+// Cancel iterating over the current query, and set the iterator's error value
+// to the provided error.
+func (i *Iterator) CancelError(err error) {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	if i.iterating {
+		i.err = err
 		i.cancel <- 1
 	}
 }

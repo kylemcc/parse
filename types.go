@@ -629,6 +629,12 @@ func encodeForRequest(v interface{}) interface{} {
 				}
 			}
 		}
+	} else if rt.Kind() == reflect.Slice {
+		vals := make([]interface{}, 0, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			vals = append(vals, encodeForRequest(rv.Index(i).Interface()))
+		}
+		return vals
 	}
 
 	return v

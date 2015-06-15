@@ -396,6 +396,16 @@ type File struct {
 	Url  string `json:"url"`
 }
 
+func (f *File) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		Name string `json:"name"`
+		Url  string `json:"url"`
+		Type string `json:"__type"`
+	}{
+		f.Name, f.Name, "File",
+	})
+}
+
 // Represents a Parse Pointer type. When querying, creating, or updating
 // objects, any struct types will be automatically converted to and from Pointer
 // types as required. Direct use of this type should not be necessary

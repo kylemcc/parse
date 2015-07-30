@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -8,6 +9,10 @@ import (
 	"reflect"
 	"time"
 )
+
+func init() {
+	gob.Register(&aclT{})
+}
 
 var registeredTypes = map[string]reflect.Type{}
 
@@ -274,6 +279,14 @@ func (a *aclT) SetRoleReadAccess(role string, allowed bool) ACL {
 func (a *aclT) SetRoleWriteAccess(role string, allowed bool) ACL {
 	a.write["role:"+role] = allowed
 	return a
+}
+
+func (a *aclT) GobEncode() ([]byte, error) {
+	return json.Marshal(a)
+}
+
+func (a *aclT) GobDecode(b []byte) error {
+	return json.Unmarshal(b, &a)
 }
 
 func (a *aclT) MarshalJSON() ([]byte, error) {

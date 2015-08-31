@@ -187,6 +187,8 @@ type Query interface {
 	// and iteration will discontinue. This argument may be nil.
 	Each(rc interface{}) (*Iterator, error)
 
+	SetBatchSize(size uint) Query
+
 	// Retrieves a list of objects that satisfy the given query. The results
 	// are assigned to the slice provided to NewQuery.
 	//
@@ -226,6 +228,7 @@ type queryT struct {
 	limit     *int
 	skip      *int
 	count     *int
+	batchSize int
 	where     map[string]interface{}
 	include   map[string]struct{}
 	keys      map[string]struct{}
@@ -735,7 +738,11 @@ func (q *queryT) Each(rc interface{}) (*Iterator, error) {
 	}
 
 	q.OrderBy("objectId")
-	q.Limit(100)
+	if q.batchSize > 0 {
+		q.Limit(q.batchSize)
+	} else {
+		q.Limit(100)
+	}
 
 	i := newIterator()
 
@@ -816,6 +823,15 @@ func (q *queryT) Each(rc interface{}) (*Iterator, error) {
 	}()
 
 	return i, nil
+}
+
+func (q *queryT) SetBatchSize(size uint) Query {
+	if size <= 1000 {
+		q.batchSize = int(size)
+	} else {
+		q.batchSize = 100
+	}
+	return q
 }
 
 func (q *queryT) Find() error {

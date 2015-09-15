@@ -518,6 +518,200 @@ func getEndpointBase(v interface{}) string {
 
 type Config map[string]interface{}
 
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to a string and returns
+// it. If the value is not present, or is not a string
+// value, an empty string is returned
+func (c Config) String(key string) string {
+	if v, ok := c[key]; ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to a byte slice and returns
+// it. If the value is not present, or is not a string
+// value, an empty byte slice is returned
+func (c Config) Bytes(key string) []byte {
+	if v, ok := c[key]; ok {
+		if s, ok := v.(string); ok {
+			return []byte(s)
+		}
+	}
+	return make([]byte, 0, 0)
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to a bool and returns
+// it. If the value is not present, or is not a bool
+// value, false is returned
+func (c Config) Bool(key string) bool {
+	if v, ok := c[key]; ok {
+		if b, ok := v.(bool); ok {
+			return b
+		}
+	}
+	return false
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to an int and returns
+// it. If the value is not present, or is not a numeric
+// value, 0 is returned
+func (c Config) Int(key string) int {
+	if v, ok := c[key]; ok {
+		// since we're unmarshaling into an interface{} value, all
+		// numbers will be float64 values
+		if f, ok := v.(float64); ok {
+			return int(f)
+		}
+	}
+	return 0
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to an int64 and returns
+// it. If the value is not present, or is not a numeric
+// value, 0 is returned
+func (c Config) Int64(key string) int64 {
+	if v, ok := c[key]; ok {
+		// since we're unmarshaling into an interface{} value, all
+		// numbers will be float64 values
+		if f, ok := v.(float64); ok {
+			return int64(f)
+		}
+	}
+	return 0
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to an float64 and returns
+// it. If the value is not present, or is not a numeric
+// value, 0 is returned
+func (c Config) Float(key string) float64 {
+	if v, ok := c[key]; ok {
+		// since we're unmarshaling into an interface{} value, all
+		// numbers will be float64 values
+		if f, ok := v.(float64); ok {
+			return f
+		}
+	}
+	return 0
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to a slice of interface{}
+// values and returns it. If the value is not present, or
+// is not an array value, nil is returned
+func (c Config) Values(key string) []interface{} {
+	if v, ok := c[key]; ok {
+		if s, ok := v.([]interface{}); ok {
+			return s
+		}
+	}
+	return nil
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to a slice of string
+// values and returns it. If the value is not present, or
+// is not an array value, nil is returned
+func (c Config) Strings(key string) []string {
+	if v, ok := c[key]; ok {
+		if is, ok := v.([]interface{}); ok {
+			ss := []string{}
+			for _, i := range is {
+				if s, ok := i.(string); ok {
+					ss = append(ss, s)
+				}
+			}
+			if len(ss) == len(is) {
+				return ss
+			}
+		}
+	}
+	return nil
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to a slice of int values
+// and returns it. If the value is not present, or is not
+// an array value, nil is returned
+func (c Config) Ints(key string) []int {
+	if v, ok := c[key]; ok {
+		if ifs, ok := v.([]interface{}); ok {
+			ints := []int{}
+			for _, i := range ifs {
+				if f, ok := i.(float64); ok {
+					ints = append(ints, int(f))
+				}
+			}
+			if len(ints) == len(ifs) {
+				return ints
+			}
+		}
+	}
+	return nil
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to a slice of int64 values
+// and returns it. If the value is not present, or is not
+// an array value, nil is returned
+func (c Config) Int64s(key string) []int64 {
+	if v, ok := c[key]; ok {
+		if ifs, ok := v.([]interface{}); ok {
+			ints := []int64{}
+			for _, i := range ifs {
+				if f, ok := i.(float64); ok {
+					ints = append(ints, int64(f))
+				}
+			}
+			if len(ints) == len(ifs) {
+				return ints
+			}
+		}
+	}
+	return nil
+}
+
+// Retrieves the value associated with the given key, and,
+// if present, converts the value to a slice of float64 values
+// and returns it. If the value is not present, or is not
+// an array value, nil is returned
+func (c Config) Floats(key string) []float64 {
+	if v, ok := c[key]; ok {
+		if is, ok := v.([]interface{}); ok {
+			fs := []float64{}
+			for _, i := range is {
+				if f, ok := i.(float64); ok {
+					fs = append(fs, f)
+				}
+			}
+			if len(fs) == len(is) {
+				return fs
+			}
+		}
+	}
+	return nil
+}
+
+// Retrieves the value associated with the given key, and, if present,
+// converts value to a Config type (map[string]interface{}) and returns
+// it. If the value is not present, or is not a JSON object, nil is
+// returned
+func (c Config) Map(key string) Config {
+	if v, ok := c[key]; ok {
+		if s, ok := v.(map[string]interface{}); ok {
+			return Config(s)
+		}
+	}
+	return nil
+}
+
 type configRequestT struct{}
 
 func (c *configRequestT) method() string {

@@ -151,6 +151,101 @@ func TestConfig(t *testing.T) {
 	}
 }
 
+func TestConfigHelpers(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"params":{"bool":true,"string":"blah blah blah","int":5,"float":123.4,"strings":["a","b","c"],"ints":[1,2,3],"floats":[1.1,2.2,3.3],"object":{"a":false,"b":73}}}`)
+	})
+	defer teardownTestServer()
+
+	c, err := GetConfig()
+	if err != nil {
+		t.Errorf("unexpected error on GetConfig: %v\n", err)
+		t.FailNow()
+	}
+
+	if b := c.Bool("bool"); !b {
+		t.Errorf("Bool returned incorrect value for key [%v]. Expected true, got false", "bool")
+	}
+	if b := c.Bool("DOES_NOT_EXIST"); b {
+		t.Errorf("Bool returned incorrect value for key [%v]. Expected false, got true", "DOES_NOT_EXIST")
+	}
+
+	if s := c.String("string"); s != "blah blah blah" {
+		t.Errorf("String returned incorrect value for key [%v]. Expected [%q] got [%q]", "string", "blah blah blah", s)
+	}
+	if s := c.String("DOES_NOT_EXIST"); s != "" {
+		t.Errorf("String returned incorrect value for key [%v]. Expected [%q] got [%q]", "DOES_NOT_EXIST", "", s)
+	}
+
+	if b := c.Bytes("string"); string(b) != "blah blah blah" {
+		t.Errorf("Bytes returned incorrect value for key [%v]. Expected [%q] got [%q]", "string", "blah blah blah", string(b))
+	}
+	if b := c.Bytes("DOES_NOT_EXIST"); string(b) != "" {
+		t.Errorf("Bytes returned incorrect value for key [%v]. Expected [%q] got [%q]", "string", "", string(b))
+	}
+
+	if f := c.Float("float"); f != 123.4 {
+		t.Errorf("Float returned incorrect value for key [%v]. Expected [%v] got [%v]", "float", 123.4, f)
+	}
+	if f := c.Float("DOES_NOT_EXIST"); f != 0 {
+		t.Errorf("Float returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", 0, f)
+	}
+
+	if i := c.Int("int"); i != 5 {
+		t.Errorf("Int returned incorrect value for key [%v]. Expected [%v] got [%v]", "int", 5, i)
+	}
+	if i := c.Int("DOES_NOT_EXIST"); i != 0 {
+		t.Errorf("Int returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", 0, i)
+	}
+	if i := c.Int64("int"); i != 5 {
+		t.Errorf("Int64 returned incorrect value for key [%v]. Expected [%v] got [%v]", "int", 5, i)
+	}
+	if i := c.Int64("DOES_NOT_EXIST"); i != 0 {
+		t.Errorf("Int64 returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", 0, i)
+	}
+
+	if v := c.Values("strings"); !reflect.DeepEqual(v, []interface{}{"a", "b", "c"}) {
+		t.Errorf("Values returned incorrect value for key [%v]. Expected [%+v] got [%+v]", "strings", []interface{}{"a", "b", "c"}, v)
+	}
+	if v := c.Values("DOES_NOT_EXIST"); v != nil {
+		t.Errorf("Values returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", nil, v)
+	}
+
+	if v := c.Strings("strings"); !reflect.DeepEqual(v, []string{"a", "b", "c"}) {
+		t.Errorf("Strings returned incorrect value for key [%v]. Expected [%+v] got [%+v]", "strings", []string{"a", "b", "c"}, v)
+	}
+	if v := c.Strings("DOES_NOT_EXIST"); v != nil {
+		t.Errorf("Strings returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", nil, v)
+	}
+
+	if v := c.Ints("ints"); !reflect.DeepEqual(v, []int{1, 2, 3}) {
+		t.Errorf("Ints returned incorrect value for key [%v]. Expected [%+v] got [%+v]", "ints", []int{1, 2, 3}, v)
+	}
+	if v := c.Ints("DOES_NOT_EXIST"); v != nil {
+		t.Errorf("Ints returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", nil, v)
+	}
+	if v := c.Int64s("ints"); !reflect.DeepEqual(v, []int64{1, 2, 3}) {
+		t.Errorf("Int64s returned incorrect value for key [%v]. Expected [%+v] got [%+v]", "ints", []int64{1, 2, 3}, v)
+	}
+	if v := c.Int64s("DOES_NOT_EXIST"); v != nil {
+		t.Errorf("Int64s returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", nil, v)
+	}
+
+	if v := c.Floats("floats"); !reflect.DeepEqual(v, []float64{1.1, 2.2, 3.3}) {
+		t.Errorf("Floats returned incorrect value for key [%v]. Expected [%+v] got [%+v]", "ints", []float64{1.1, 2.2, 3.3}, v)
+	}
+	if v := c.Floats("DOES_NOT_EXIST"); v != nil {
+		t.Errorf("Floats returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", nil, v)
+	}
+
+	if v := c.Map("object"); !reflect.DeepEqual(v, Config{"a": false, "b": float64(73)}) {
+		t.Errorf("Map returned incorrect value for key [%v]. Expected [%+v] got [%+v]", "object", Config{"a": false, "b": 73}, v)
+	}
+	if v := c.Map("DOES_NOT_EXIST"); v != nil {
+		t.Errorf("Map returned incorrect value for key [%v]. Expected [%v] got [%v]", "DOES_NOT_EXIST", nil, v)
+	}
+}
+
 type ClassNameTestType struct{}
 
 type CustomClassNameTestType struct{}

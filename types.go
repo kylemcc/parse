@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/url"
 	"path"
 	"reflect"
@@ -401,6 +402,33 @@ func (g *GeoPoint) UnmarshalJSON(b []byte) error {
 	g.Latitude = s.Latitude
 	g.Longitude = s.Longitude
 	return nil
+}
+
+// Returns this distance from this GeoPoint to another in radians
+func (g GeoPoint) RadiansTo(point GeoPoint) float64 {
+	d2r := math.Pi / 180.0
+	lat1Rad := g.Latitude * d2r
+	long1Rad := g.Longitude * d2r
+	lat2Rad := point.Latitude * d2r
+	long2Rad := point.Longitude * d2r
+
+	sinDeltaLatDiv2 := math.Sin((lat1Rad - lat2Rad) / 2)
+	sinDeltaLongDiv2 := math.Sin((long1Rad - long2Rad) / 2)
+
+	// Square of half the straight line chord distance between both points.
+	var a = sinDeltaLatDiv2*sinDeltaLatDiv2 + math.Cos(lat1Rad)*math.Cos(lat2Rad)*sinDeltaLongDiv2*sinDeltaLongDiv2
+	a = math.Min(1.0, a)
+	return 2 * math.Asin(math.Sqrt(a))
+}
+
+// Returns this distance from this GeoPoint to another in kilometers
+func (g GeoPoint) KilometersTo(point GeoPoint) float64 {
+	return g.RadiansTo(point) * 6371.0
+}
+
+// Returns this distance from this GeoPoint to another in miles
+func (g GeoPoint) MilesTo(point GeoPoint) float64 {
+	return g.RadiansTo(point) * 3958.8
 }
 
 // Represents the Parse File type

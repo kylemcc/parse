@@ -443,7 +443,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		Url  string `json:"url"`
 		Type string `json:"__type"`
 	}{
-		f.Name, f.Name, "File",
+		f.Name, f.Url, "File",
 	})
 }
 

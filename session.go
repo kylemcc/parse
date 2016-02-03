@@ -13,6 +13,7 @@ type Session interface {
 	NewUpdate(v interface{}) (Update, error)
 	Create(v interface{}) error
 	Delete(v interface{}) error
+	CallFunction(name string, params Params, resp interface{}) error
 }
 
 type loginRequestT struct {
@@ -139,6 +140,10 @@ func (s *sessionT) Create(v interface{}) error {
 
 func (s *sessionT) Delete(v interface{}) error {
 	return _delete(v, false, s)
+}
+
+func (s *sessionT) CallFunction(name string, params Params, resp interface{}) error {
+	return callFn(name, params, resp, s)
 }
 
 func (s *loginRequestT) method() string {

@@ -173,9 +173,6 @@ func (c *clientT) doRequest(op requestT) ([]byte, error) {
 		c.limiter.limit()
 	}
 
-	bodyCopy, _ := op.body()
-	fmt.Println(fmt.Sprintf("===============\nRequest\n%s %s\n%v\n\n%v===============", method, ep, req.Header, bodyCopy ))
-
 	resp, err := defaultClient.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -198,8 +195,6 @@ func (c *clientT) doRequest(op requestT) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(fmt.Sprintf("===============\nResponse\n%s\n===============", respBody ))
 
 	// Error formats are consistent. If the response is an error,
 	// return a ParseError

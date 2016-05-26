@@ -102,10 +102,12 @@ func Create(v interface{}, useMasterKey bool) error {
 
 func Signup(username string, password string, user interface{}) error {
 	cr := &createT{
-		v:                  user,
-		shouldUseMasterKey: false,
-		currentSession:     nil,
-		isUser:             true,
+		v:                  	user,
+		shouldUseMasterKey: 	false,
+		currentSession:     	nil,
+		isUser:             	true,
+		username:		username,
+		password:           	password,
 	}
 	if b, err := defaultClient.doRequest(cr); err != nil {
 		return err

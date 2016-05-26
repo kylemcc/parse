@@ -30,27 +30,27 @@ func TestACLMarshal(t *testing.T) {
 	acl.SetRoleWriteAccess("qpo", true)
 
 	expected := map[string]map[string]bool{
-		"*": map[string]bool{
+		"*": {
 			"read": true,
 		},
-		"abc": map[string]bool{
+		"abc": {
 			"read": true,
 		},
-		"ghi": map[string]bool{
+		"ghi": {
 			"read":  true,
 			"write": true,
 		},
-		"jkl": map[string]bool{
+		"jkl": {
 			"write": true,
 		},
-		"role:zyx": map[string]bool{
+		"role:zyx": {
 			"read": true,
 		},
-		"role:tsr": map[string]bool{
+		"role:tsr": {
 			"read":  true,
 			"write": true,
 		},
-		"role:qpo": map[string]bool{
+		"role:qpo": {
 			"write": true,
 		},
 	}

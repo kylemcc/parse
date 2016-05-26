@@ -207,12 +207,12 @@ func TestFilters(t *testing.T) {
 		"f19": map[string]interface{}{
 			"$within": map[string]interface{}{
 				"$box": []map[string]interface{}{
-					map[string]interface{}{
+					{
 						"__type":    "GeoPoint",
 						"latitude":  41.9373658,
 						"longitude": -87.6746106,
 					},
-					map[string]interface{}{
+					{
 						"__type":    "GeoPoint",
 						"latitude":  41.9414359,
 						"longitude": -87.6645255,

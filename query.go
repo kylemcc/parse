@@ -764,11 +764,11 @@ func (q *queryT) Each(rc interface{}) (*Iterator, error) {
 
 		crv := reflect.ValueOf(i.cancel)
 		selectCases := []reflect.SelectCase{
-			reflect.SelectCase{
+			{
 				Dir:  reflect.SelectRecv,
 				Chan: crv,
 			},
-			reflect.SelectCase{
+			{
 				Dir:  reflect.SelectSend,
 				Chan: rv,
 			},

@@ -1,6 +1,6 @@
 #Parse
 
-[![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/kylemcc/parse) [![license](http://img.shields.io/badge/license-BSD-red.svg?style=flat)](https://raw.githubusercontent.com/kylemcc/parse/master/LICENSE)
+[![Build Status](https://travis-ci.org/kylemcc/parse.svg?branch=master)](https://travis-ci.org/kylemcc/parse)[![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/kylemcc/parse) [![license](http://img.shields.io/badge/license-BSD-red.svg?style=flat)](https://raw.githubusercontent.com/kylemcc/parse/master/LICENSE)[![Go Report Card](https://goreportcard.com/badge/kylemcc/parse)](https://goreportcard.com/report/kylemcc/parse)
 
 This package provides a client for Parse's REST API. So far, it supports most of the query operations
 provided by Parse's [Javascript library](https://parse.com/docs/js/symbols/Parse.Query.html), with a

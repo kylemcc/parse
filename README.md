@@ -77,7 +77,6 @@ func main() {
 			- AddRelation
 			- RemoveRelation
 - Roles
-- Cloud Functions
 - Background Jobs
 - Analytics
 - File upload/retrieval

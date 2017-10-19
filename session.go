@@ -156,14 +156,14 @@ func (s *loginRequestT) method() string {
 
 func (s *loginRequestT) endpoint() (string, error) {
 	u := url.URL{}
-	u.Scheme = "https"
+	u.Scheme = ParseScheme
 	u.Host = parseHost
 	if s.s != nil {
-		u.Path = "/1/users/me"
+		u.Path = "/" + ParsePath + "/users/me"
 	} else if s.authdata != nil {
-		u.Path = "/1/users"
+		u.Path = "/" + ParsePath + "/users"
 	} else {
-		u.Path = "/1/login"
+		u.Path = "/" + ParsePath + "/login"
 	}
 
 	if s.username != "" && s.password != "" {

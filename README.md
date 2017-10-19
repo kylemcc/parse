@@ -25,8 +25,8 @@ import (
 )
 
 func main() {
-	parse.Initialize("APP_ID", "REST_KEY", "MASTER_KEY") // master key is optional
-
+	parse.Initialize("APP_ID", "REST_KEY", "MASTER_KEY") // rest and master keys are optional
+	parse.ServerURL("https://SERVER_URL/PATH")
 	user := parse.User{}
 	q, err := parse.NewQuery(&user)
 	if err != nil {
@@ -41,7 +41,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Retrieved user with id: %s\n", u.Id)
+	fmt.Printf("Retrieved user with id: %s\n", user.Id)
 
 	q2, _ := parse.NewQuery(&parse.User{})
 	q2.GreaterThan("createdAt", time.Date(2014, 01, 01, 0, 0, 0, 0, time.UTC))

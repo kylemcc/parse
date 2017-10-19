@@ -282,7 +282,7 @@ func (u *updateT) endpoint() (string, error) {
 		return "", fmt.Errorf("can not update value - type has no Id field")
 	}
 
-	_url.Scheme = "https"
+	_url.Scheme = ParseScheme
 	_url.Host = parseHost
 	_url.Path = p
 

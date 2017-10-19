@@ -54,9 +54,9 @@ func (p *pushT) method() string {
 
 func (p *pushT) endpoint() (string, error) {
 	u := url.URL{}
-	u.Scheme = "https"
+	u.Scheme = ParseScheme
 	u.Host = parseHost
-	u.Path = "/1/push"
+	u.Path = "/" + ParsePath +"/push"
 
 	return u.String(), nil
 }

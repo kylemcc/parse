@@ -8,13 +8,13 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 	"time"
 )
 
 const (
-	ParseVersion       = "1"
 	AppIdHeader        = "X-Parse-Application-Id"
 	RestKeyHeader      = "X-Parse-REST-API-Key"
 	MasterKeyHeader    = "X-Parse-Master-Key"
@@ -22,7 +22,11 @@ const (
 	UserAgentHeader    = "User-Agent"
 )
 
-var parseHost = "api.parse.com"
+var ParseScheme string = "https"
+var ParsePath string = "1"
+var parseHost string = "api.parse.com"
+
+
 var fieldNameCache map[reflect.Type]map[string]string = make(map[reflect.Type]map[string]string)
 var fieldCache = make(map[reflect.Type]reflect.StructField)
 
@@ -80,6 +84,16 @@ func Initialize(appId, restKey, masterKey string) {
 		userAgent:  "github.com/kylemcc/parse",
 		httpClient: &http.Client{},
 	}
+}
+
+func ServerURL(u string) {
+	url, err := url.Parse(u)
+	if err != nil {
+		panic(err)
+	}
+	parseHost = url.Host
+	ParsePath = url.Path
+	ParseScheme = url.Scheme
 }
 
 // Set the timeout for requests to Parse

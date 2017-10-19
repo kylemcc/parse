@@ -26,7 +26,6 @@ var ParseScheme string = "https"
 var ParsePath string = "1"
 var parseHost string = "api.parse.com"
 
-
 var fieldNameCache map[reflect.Type]map[string]string = make(map[reflect.Type]map[string]string)
 var fieldCache = make(map[reflect.Type]reflect.StructField)
 

@@ -27,6 +27,10 @@ import (
 func main() {
 	parse.Initialize("APP_ID", "REST_KEY", "MASTER_KEY") // rest and master keys are optional
 	parse.ServerURL("https://SERVER_URL/PATH")
+	serverHealthCheck, err := parse.ServerHealthCheck()
+	if serverHealthCheck["status"] != "ok" {
+		panic(err)
+	}
 	user := parse.User{}
 	q, err := parse.NewQuery(&user)
 	if err != nil {

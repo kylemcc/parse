@@ -25,10 +25,10 @@ func (c *callFnT) method() string {
 }
 
 func (c *callFnT) endpoint() (string, error) {
-	p := path.Join(ParsePath, "functions", c.name)
+	p := path.Join(apps[selectedAppId].parsePath, "functions", c.name)
 	u := url.URL{}
-	u.Scheme = ParseScheme
-	u.Host = parseHost
+	u.Scheme = apps[selectedAppId].parseScheme
+	u.Host = apps[selectedAppId].parseHost
 	u.Path = p
 
 	return u.String(), nil
@@ -70,7 +70,7 @@ func callFn(name string, params Params, resp interface{}, currentSession *sessio
 		params:         params,
 		currentSession: currentSession,
 	}
-	if b, err := defaultClient.doRequest(cr); err != nil {
+	if b, err := apps[selectedAppId].doRequest(cr); err != nil {
 		return err
 	} else {
 		r := fnRespT{}

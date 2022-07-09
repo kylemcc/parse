@@ -250,7 +250,7 @@ func (u *updateT) Execute() (err error) {
 			}
 		}
 	}
-	if b, err := defaultClient.doRequest(u); err != nil {
+	if b, err := apps[selectedAppId].doRequest(u); err != nil {
 		return err
 	} else {
 		return handleResponse(b, u.inst)
@@ -282,8 +282,8 @@ func (u *updateT) endpoint() (string, error) {
 		return "", fmt.Errorf("can not update value - type has no Id field")
 	}
 
-	_url.Scheme = ParseScheme
-	_url.Host = parseHost
+	_url.Scheme = apps[selectedAppId].parseScheme
+	_url.Host = apps[selectedAppId].parseHost
 	_url.Path = p
 
 	return _url.String(), nil

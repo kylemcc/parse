@@ -24,8 +24,8 @@ func (c *createT) method() string {
 func (c *createT) endpoint() (string, error) {
 	p := getEndpointBase(c.v)
 	u := url.URL{}
-	u.Scheme = ParseScheme
-	u.Host = parseHost
+	u.Scheme = apps[selectedAppId].parseScheme
+	u.Host = apps[selectedAppId].parseHost
 	u.Path = p
 
 	return u.String(), nil
@@ -109,7 +109,7 @@ func Signup(username string, password string, user interface{}) error {
 		username:           username,
 		password:           password,
 	}
-	if b, err := defaultClient.doRequest(cr); err != nil {
+	if b, err := apps[selectedAppId].doRequest(cr); err != nil {
 		return err
 	} else {
 		return handleResponse(b, user)
@@ -127,7 +127,7 @@ func create(v interface{}, useMasterKey bool, currentSession *sessionT) error {
 		shouldUseMasterKey: useMasterKey,
 		currentSession:     currentSession,
 	}
-	if b, err := defaultClient.doRequest(cr); err != nil {
+	if b, err := apps[selectedAppId].doRequest(cr); err != nil {
 		return err
 	} else {
 		return handleResponse(b, v)

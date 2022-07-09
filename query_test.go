@@ -523,6 +523,32 @@ func TestCount(t *testing.T) {
 	}
 }
 
+func TestCountOnNonDefaultInitializedServer(t *testing.T) {
+	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		fmt.Fprintf(w, `{"results":[],"count":73}`)
+	})
+	defer teardownTestServer()
+
+	AppConnectionWrapper("app_id_2", func() {
+		q, err := NewQuery(&User{})
+		if err != nil {
+			t.Errorf("Unexpected error creating query: %v\n", err)
+			t.FailNow()
+		}
+
+		q.EqualTo("city", "Chicago")
+		cnt, err := q.Count()
+		if err != nil {
+			t.Errorf("Error running query: %v\n", err)
+		}
+
+		if cnt != 73 {
+			t.Errorf("Count returned incorrect value. Got [%d] expected [%d]\n", cnt, 73)
+		}
+	})
+}
+
 func TestFind(t *testing.T) {
 	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"results":[{"objectId": "123", "createdAt":"2012-04-14T19:23:10.123Z"},{"objectId":"abc","createdAt":"2012-04-14T19:23:10.123Z"}]}`)

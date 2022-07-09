@@ -45,7 +45,7 @@ func Login(username, password string, u interface{}) (Session, error) {
 	}
 
 	s := &sessionT{user: user}
-	if b, err := defaultClient.doRequest(&loginRequestT{username: username, password: password}); err != nil {
+	if b, err := apps[selectedAppId].doRequest(&loginRequestT{username: username, password: password}); err != nil {
 		return nil, err
 	} else if st, err := handleLoginResponse(b, s.user); err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func LoginFacebook(authData *FacebookAuthData, u interface{}) (Session, error) {
 	}
 
 	s := &sessionT{user: user}
-	if b, err := defaultClient.doRequest(&loginRequestT{authdata: &AuthData{Facebook: authData}}); err != nil {
+	if b, err := apps[selectedAppId].doRequest(&loginRequestT{authdata: &AuthData{Facebook: authData}}); err != nil {
 		return nil, err
 	} else if st, err := handleLoginResponse(b, s.user); err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func Become(st string, u interface{}) (Session, error) {
 		},
 	}
 
-	if b, err := defaultClient.doRequest(r); err != nil {
+	if b, err := apps[selectedAppId].doRequest(r); err != nil {
 		return nil, err
 	} else if err := handleResponse(b, r.s.user); err != nil {
 		return nil, err
@@ -156,14 +156,14 @@ func (s *loginRequestT) method() string {
 
 func (s *loginRequestT) endpoint() (string, error) {
 	u := url.URL{}
-	u.Scheme = ParseScheme
-	u.Host = parseHost
+	u.Scheme = apps[selectedAppId].parseScheme
+	u.Host = apps[selectedAppId].parseHost
 	if s.s != nil {
-		u.Path = "/" + ParsePath + "/users/me"
+		u.Path = "/" + apps[selectedAppId].parsePath + "/users/me"
 	} else if s.authdata != nil {
-		u.Path = "/" + ParsePath + "/users"
+		u.Path = "/" + apps[selectedAppId].parsePath + "/users"
 	} else {
-		u.Path = "/" + ParsePath + "/login"
+		u.Path = "/" + apps[selectedAppId].parsePath + "/login"
 	}
 
 	if s.username != "" && s.password != "" {

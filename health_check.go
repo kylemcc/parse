@@ -10,17 +10,18 @@ const HealthCheckEndPoint = "/health"
 type healthCheckT struct {
 }
 
-func ServerHealthCheck() (map[string]string, error) {
+// To check if the server is up and running.
+func ServerHealthCheck() (map[string]interface{}, error) {
 
 	body, err := defaultClient.doRequest(&healthCheckT{})
 	if err != nil {
-		return map[string]string{"status": "fail"}, err
+		return nil, err
 	}
-	data := map[string]string{}
-	if err := json.Unmarshal(body, &data); err != nil {
-		return map[string]string{"status": "fail"}, err
+	resp := map[string]interface{}{}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, err
 	}
-	return map[string]string{"status": "ok"}, nil
+	return resp, nil
 }
 
 func (h *healthCheckT) method() string {

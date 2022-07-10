@@ -10,11 +10,11 @@ import (
 func TestServerHealthCheckStatusIsOk(t *testing.T) {
 
 	setupTestServer(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"status":"ok"}`)
+		fmt.Fprintf(w, `{"status": "ok"}`)
 	})
 	defer teardownTestServer()
 
-	expected := map[string]string{"status": "ok"}
+	expected := map[string]interface{}{"status": "ok"}
 	result, err := ServerHealthCheck()
 	if err != nil {
 		t.Error("Error must be nil while server status is ok!")
@@ -32,12 +32,12 @@ func TestServerHealthCheckStatusIsNotOk(t *testing.T) {
 	})
 	defer teardownTestServer()
 
-	expected := map[string]string{"status": "fail"}
 	result, err := ServerHealthCheck()
 	if err == nil {
 		t.Error("Error must be available while server status is not ok!")
 	}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("ServerHealthCheck result is not formatted!")
+
+	if result != nil {
+		t.Errorf("ServerHealthCheck must return nil as response, while server status is not ok!")
 	}
 }

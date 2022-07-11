@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -540,7 +541,11 @@ func getEndpointBase(v interface{}) string {
 		p = path.Join("classes", cname)
 	}
 
-	p = path.Join(ParsePath, p)
+	if strings.HasPrefix(apps[selectedAppId].parsePath, "/") {
+		p = path.Join(apps[selectedAppId].parsePath[1:], p)
+	} else {
+		p = path.Join(apps[selectedAppId].parsePath, p)
+	}
 	return p
 }
 
@@ -748,9 +753,9 @@ func (c *configRequestT) method() string {
 
 func (c *configRequestT) endpoint() (string, error) {
 	u := url.URL{}
-	u.Scheme = ParseScheme
-	u.Host = parseHost
-	u.Path = path.Join(ParsePath, "config")
+	u.Scheme = apps[selectedAppId].parseScheme
+	u.Host = apps[selectedAppId].parseHost
+	u.Path = path.Join(apps[selectedAppId].parsePath, "config")
 	return u.String(), nil
 }
 
@@ -771,7 +776,7 @@ func (c *configRequestT) contentType() string {
 }
 
 func GetConfig() (Config, error) {
-	b, err := defaultClient.doRequest(&configRequestT{})
+	b, err := apps[selectedAppId].doRequest(&configRequestT{})
 	if err != nil {
 		return nil, err
 	}

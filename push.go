@@ -54,9 +54,9 @@ func (p *pushT) method() string {
 
 func (p *pushT) endpoint() (string, error) {
 	u := url.URL{}
-	u.Scheme = ParseScheme
-	u.Host = parseHost
-	u.Path = "/" + ParsePath + "/push"
+	u.Scheme = apps[selectedAppId].parseScheme
+	u.Host = apps[selectedAppId].parseHost
+	u.Path = "/" + apps[selectedAppId].parsePath + "/push"
 
 	return u.String(), nil
 }
@@ -144,7 +144,7 @@ func (p *pushT) Data(d map[string]interface{}) PushNotification {
 }
 
 func (p *pushT) Send() error {
-	b, err := defaultClient.doRequest(p)
+	b, err := apps[selectedAppId].doRequest(p)
 	data := map[string]interface{}{}
 	if err := json.Unmarshal(b, &data); err != nil {
 		return err

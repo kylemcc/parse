@@ -20,7 +20,7 @@ func _delete(v interface{}, useMasterKey bool, currentSession *sessionT) error {
 		return errors.New("v must be a non-nil pointer")
 	}
 
-	_, err := defaultClient.doRequest(&deleteT{inst: v, shouldUseMasterKey: useMasterKey, currentSession: currentSession})
+	_, err := apps[selectedAppId].doRequest(&deleteT{inst: v, shouldUseMasterKey: useMasterKey, currentSession: currentSession})
 	return err
 }
 
@@ -50,8 +50,8 @@ func (d *deleteT) endpoint() (string, error) {
 
 	p := getEndpointBase(d.inst)
 	u := url.URL{}
-	u.Scheme = ParseScheme
-	u.Host = parseHost
+	u.Scheme = apps[selectedAppId].parseScheme
+	u.Host = apps[selectedAppId].parseHost
 	u.Path = path.Join(p, id)
 
 	return u.String(), nil

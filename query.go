@@ -264,7 +264,7 @@ func (q *queryT) UseMasterKey() Query {
 func (q *queryT) Get(id string) error {
 	q.op = otGet
 	q.instId = &id
-	if body, err := defaultClient.doRequest(q); err != nil {
+	if body, err := apps[selectedAppId].doRequest(q); err != nil {
 		return err
 	} else {
 		return handleResponse(body, q.inst)
@@ -785,7 +785,7 @@ func (q *queryT) Each(rc interface{}) (*Iterator, error) {
 			s.Elem().Set(reflect.MakeSlice(sliceType, 0, 100))
 
 			// TODO: handle errors and retry if possible
-			b, err := defaultClient.doRequest(q)
+			b, err := apps[selectedAppId].doRequest(q)
 			if err != nil {
 				i.err = err
 				i.resChan <- err
@@ -836,7 +836,7 @@ func (q *queryT) SetBatchSize(size uint) Query {
 
 func (q *queryT) Find() error {
 	q.op = otQuery
-	if b, err := defaultClient.doRequest(q); err != nil {
+	if b, err := apps[selectedAppId].doRequest(q); err != nil {
 		return err
 	} else {
 		return handleResponse(b, q.inst)
@@ -855,7 +855,7 @@ func (q *queryT) First() error {
 		dv := reflect.New(reflect.SliceOf(rvi.Type()))
 		dv.Elem().Set(reflect.MakeSlice(reflect.SliceOf(rvi.Type()), 0, 1))
 
-		if b, err := defaultClient.doRequest(q); err != nil {
+		if b, err := apps[selectedAppId].doRequest(q); err != nil {
 			return err
 		} else if err := handleResponse(b, dv.Interface()); err != nil {
 			return err
@@ -866,7 +866,7 @@ func (q *queryT) First() error {
 			rv.Elem().Set(dv.Elem().Index(0))
 		}
 	} else if rvi.Kind() == reflect.Slice {
-		if b, err := defaultClient.doRequest(q); err != nil {
+		if b, err := apps[selectedAppId].doRequest(q); err != nil {
 			return err
 		} else if err := handleResponse(b, q.inst); err != nil {
 			return err
@@ -884,7 +884,7 @@ func (q *queryT) Count() (int64, error) {
 	q.count = &c
 
 	var count int64
-	if b, err := defaultClient.doRequest(q); err != nil {
+	if b, err := apps[selectedAppId].doRequest(q); err != nil {
 		return 0, err
 	} else {
 		err := handleResponse(b, &count)
@@ -959,8 +959,8 @@ func (q *queryT) endpoint() (string, error) {
 		return "", err
 	}
 
-	u.Scheme = ParseScheme
-	u.Host = parseHost
+	u.Scheme = apps[selectedAppId].parseScheme
+	u.Host = apps[selectedAppId].parseHost
 	u.RawQuery = qs
 	u.Path = p
 
